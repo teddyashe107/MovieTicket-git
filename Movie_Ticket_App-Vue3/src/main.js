@@ -18,12 +18,16 @@ const authLink = setContext((_, { headers }) => {
 	// get the authentication token from local storage if it exists
 	const token = localStorage.getItem('idToken');
 	// return the headers to the context so httpLink can read them
-	return {
-		headers: {
-			...headers,
-			authorization: token ? `Bearer ${token}` : '',
-		},
-	};
+	if (token) {
+		return {
+			headers: {
+				...headers,
+				authorization: token ? `Bearer ${token}` : '',
+			},
+		};
+	} else {
+		console.log('teddy token error');
+	}
 });
 const apolloClientA = new ApolloClient({
 	link: authLink.concat(httpLink),
@@ -35,9 +39,11 @@ const apolloClient = new ApolloClient({
 });
 
 const app = createApp(App);
+
 app.provide(ApolloClients, {
 	default: apolloClientA,
 	clientA: apolloClient,
 });
+
 app.use(router);
 app.mount('#app');

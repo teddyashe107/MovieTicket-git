@@ -42,7 +42,7 @@ export const useAuth0 = (state) => {
 		window.localStorage.setItem('idToken', state.idToken.__raw);
 		//window.localStorage.setItem('user_id', state.user.userId);
 		const myToken = jwt_decode(window.localStorage.getItem('idToken'));
-		//console.log(state.user);
+		console.log(window.localStorage.getItem('idToken'));
 	};
 
 	const logout = async () => {
@@ -51,8 +51,8 @@ export const useAuth0 = (state) => {
 		});
 	};
 
-	const getToken =  () => {
-		const myToken =   jwt_decode(window.localStorage.getItem('idToken'));
+	const getToken = () => {
+		const myToken = jwt_decode(window.localStorage.getItem('idToken'));
 
 		return myToken.sub;
 	};
