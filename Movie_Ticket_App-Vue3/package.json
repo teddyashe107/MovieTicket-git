@@ -9,6 +9,7 @@
 	"dependencies": {
 		"@apollo/client": "^3.4.16",
 		"@auth0/auth0-spa-js": "^1.19.2",
+		"@headlessui/vue": "^1.4.2",
 		"@vue/apollo-composable": "^4.0.0-alpha.15",
 		"@vue/composition-api": "^1.0.0-beta.14",
 		"graphql": "^16.0.1",
@@ -18,7 +19,8 @@
 		"vee-validate": "^4.5.5",
 		"vue": "^3.2.16",
 		"vue-apollo": "^3.0.8",
-		"vue-router": "^4.0.12"
+		"vue-router": "^4.0.12",
+		"vuex": "^4.0.2"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^1.9.3",
