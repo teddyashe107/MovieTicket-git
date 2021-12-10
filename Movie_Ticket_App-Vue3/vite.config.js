@@ -15,4 +15,8 @@ export default defineConfig({
 	optimizeDeps: {
 		include: ['zen-observable', '@vue/apollo-composable'],
 	},
+
+	  server: {
+    host: true
+  }
 });
