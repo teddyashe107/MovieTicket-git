@@ -1,9 +1,12 @@
 <script setup>
-import { ref, reactive } from "vue"
+import { reactive } from 'vue'
+
 import { useAuth0, AuthState } from "../auth/index";
-const { login, logout, initAuth, getToken } = useAuth0(AuthState);
+const { login, logout, initAuth, getToken, isAuthenticated, getUser} = useAuth0(AuthState);
 import { useQuery, useResult, useMutation } from "@vue/apollo-composable";
 import { gql } from "graphql-tag";
+import {useRoute} from 'vue-router'
+import { StarIcon } from '@heroicons/vue/solid'
 
 const {mutate: addComment} = useMutation(gql`
   mutation insertComments($content: String!, $user_id: String!) {
@@ -14,11 +17,14 @@ const {mutate: addComment} = useMutation(gql`
 
 `)
 
-
-const myId = getToken()
+const route = useRoute()
+//const myId = getToken()
 const cheakId = () => {
   console.log(myId)
 } 
+
+//console.log(isAuthenticated())
+//console.log(window.localStorage.getItem('user'))
 
 //const { result, loading, error } = useQuery(schedule_movies);
 
@@ -26,45 +32,69 @@ const cheakId = () => {
 
 initAuth();
 
+const movie = reactive({
+  name: route.query.name,
+  rating:route.query.rating,
+  description:route.query.description,
+  thumbnail: route.query.thumbnail
 
-
-
-
-const modalActive = ref()
+})
 </script>
 
 <template>
   <div>
-    <BaseCard>
+    <BaseCard class="container mx-auto mt-10">
       <div class="card-title mb-4 text-2xl font-bold">MovieDetails</div>
 
       <div class="flex flex-col items-center mb-4 md:flex-row">
         <img
           class="avatar-md mr-2 rounded w-40 h-60"
-          src="/images/teda.jpg"
+          :src="movie.thumbnail"
           alt=""
         />
         <div class="flex-grow text-center md:text-left ml-6">
-          <h1 class="text-3xl">Movie Name</h1>
-          <h2 class="mt-4">Rating <strong class="text-pink-600">55</strong></h2>
+          <h1 class="text-3xl">{{ movie.name }}</h1>
+          <div class="flex items-center justify-center md:justify-start">
+            <StarIcon
+              v-for="rating in [0, 1, 2, 3, 4]"
+              :key="rating"
+              :class="[
+                movie.rating > rating ? 'text-pink-700' : 'text-gray-200',
+                'h-5 w-5 flex-shrink-0',
+              ]"
+              aria-hidden="true"
+            />
+            <a
+              href="#"
+              class="
+                ml-3
+                text-sm
+                font-medium
+                text-indigo-600
+                hover:text-indigo-500
+              "
+              >117 reviews</a
+            >
+          </div>
           <h2>Movie length</h2>
           <p class="text-gray-900 text-lg mb-3 md:mb-0 mt-12">
-            MovieDescription Lorem ipsum dolor sit amet consectetur adipisicing
-            elit. Saepe, voluptatem.
+            {{ movie.description }}
           </p>
 
-          <BaseBtn
-            xl
-            class="
-              border border-primary
-              text-white
-              mt-3
-              bg-pink-600
-              rounded-full
-              hover:bg-gray-900 hover:text-white
-            "
-            >Book Tickets</BaseBtn
-          >
+          <Dialogue :thumbnail="movie.thumbnail" :name="movie.name">
+            <BaseBtn
+              xl
+              class="
+                border border-primary
+                text-white
+                bg-pink-600
+                rounded-full
+                hover:bg-gray-900 hover:text-white
+              "
+            >
+              Book Ticket</BaseBtn
+            >
+          </Dialogue>
         </div>
 
         <h1 class="text-xl mr-2 font-bold">Add Rating</h1>
@@ -93,7 +123,7 @@ const modalActive = ref()
                     <h1 class="mb-3 text-2xl text-pink-600 text-center">
                       Rate the movie
                     </h1>
-                    <form @submit.prevent="addComment({content: comment, user_id: myId})" class="text-left">
+                    <form @submit.prevent="logout()" class="text-left">
                       <div
                         class="mb-3 flex justify-center flex-col bg-gray-300"
                       >
@@ -169,8 +199,9 @@ const modalActive = ref()
         </div>
       </div>
     </BaseCard>
-    <h1 class="mt-8 text-xl font-bold">Top Reviews</h1>
-    <BaseCard class="mt-6">
+
+    <BaseCard class="mt-6 container mx-auto">
+      <h1 class="mt-8 text-xl font-bold">Top Reviews</h1>
       <div class="flex flex-col items-center mb-4 md:flex-row">
         <img
           class="avatar-md mr-2 rounded-full w-20 h-20"
