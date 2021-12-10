@@ -1,12 +1,15 @@
 <script setup>
-import {ref, reactive} from 'vue'
+import {ref, reactive, watch} from 'vue'
 import { gql } from 'graphql-tag'
 import {  useMutation } from '@vue/apollo-composable'
+
+
+
 
 const name = ref()
 //const image = ref('')
 const state = reactive ({
-  file_name : 'wooooow',
+  file_name : '',
   base64str : ''
 })
 
@@ -117,4 +120,10 @@ const {mutate: insertMovie} = useMutation(InsertMovie)
       </BaseCard>
     </div>
   </div>
+  <div>
+    <router-view />
+  </div>
 </template>
+
+<style scoped>
+</style>
