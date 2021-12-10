@@ -9,11 +9,6 @@ export const AuthState = reactive({
 	auth0: null,
 });
 
-const config = {
-	domain: import.meta.env.VITE_AUTH0_DOMAIN,
-	client_id: import.meta.env.VITE_AUTH0_CLIENT_ID,
-};
-
 export const useAuth0 = (state) => {
 	const handleStateChange = async () => {
 		state.isAuthenticated = !!(await state.auth0.isAuthenticated());
@@ -40,7 +35,7 @@ export const useAuth0 = (state) => {
 		await state.auth0.loginWithPopup();
 		await handleStateChange();
 		window.localStorage.setItem('idToken', state.idToken.__raw);
-		//window.localStorage.setItem('user_id', state.user.userId);
+		window.localStorage.setItem('user', state.user);
 		const myToken = jwt_decode(window.localStorage.getItem('idToken'));
 		console.log(window.localStorage.getItem('idToken'));
 	};
@@ -57,10 +52,22 @@ export const useAuth0 = (state) => {
 		return myToken.sub;
 	};
 
+	const getUser = () => {
+		const myUser = jwt_decode(window.localStorage.getItem('idToken'));
+
+		return myUser.picture;
+	};
+
+	const isAuthenticated = () => {
+		return state.isAuthenticated;
+	};
+
 	return {
 		login,
 		logout,
 		initAuth,
 		getToken,
+		isAuthenticated,
+		getUser,
 	};
 };
