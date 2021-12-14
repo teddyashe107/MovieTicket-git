@@ -55,7 +55,7 @@ export const useAuth0 = (state) => {
 	const getUser = () => {
 		const myUser = jwt_decode(window.localStorage.getItem('idToken'));
 
-		return myUser.picture;
+		return myUser;
 	};
 
 	const isAuthenticated = () => {
