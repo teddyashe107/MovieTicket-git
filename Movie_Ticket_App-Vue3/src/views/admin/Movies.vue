@@ -1,11 +1,38 @@
 <script setup>
 import { reactive } from 'vue';
 import { gql } from 'graphql-tag';
-import {  useMutation } from '@vue/apollo-composable'
+//import {  useMutation } from '@vue/apollo-composable'
+import {  useQuery, useResult, useMutation } from '@vue/apollo-composable'
 
-const data = reactive({
+import { useAuth0, AuthState } from "@/auth/index";
+const { login, logout, initAuth, getToken, isAuthenticated, getUser} = useAuth0(AuthState);
+
+import {XIcon} from '@heroicons/vue/outline'
+import {PlusIcon} from '@heroicons/vue/outline'
+
+const userInfo = getUser()
+console.log(userInfo.sub)
+
+const getMovies = gql`
+query getMovies {
+  movies {
+    id
+    movie_name
+    movie_type
+    movie_thumbnail
+    is_published
+    published_year
+  }
+}
+
+`
+const {result, error} = useQuery(getMovies)
+const movies = useResult(result, null, (data) => data.movies)
+//console.log(movies)
+const datas = reactive({
     actor_name: '',
     director_name: '',
+    rating: '',
     movie_name: '',
     movie_type: '',
     published_year: '',
@@ -14,8 +41,24 @@ const data = reactive({
     movie_description: '',
 })
 
+const scheduleData = reactive ([
+   {setPrice: ''},
+   {scheduleDate: ''}
+])
+
+const scheduleNow = () => {
+
+  console.log(scheduleData)
+}
+// handle add button 
+const handleAdd = () => {
+  scheduleData.push({scheduleDate: ''})
+}
+const handleRemove = () => {
+  scheduleData.pop()
+}
 function onFileChange(e) {
-   data.image_name = e.target.files[0].name;
+   datas.image_name = e.target.files[0].name;
     const reader = new FileReader();
     if(e.target.files[0]){
       reader.readAsBinaryString(e.target.files[0])
@@ -24,26 +67,77 @@ function onFileChange(e) {
     }
    
     reader.onload = () => {
-      data.base64str = btoa(reader.result)
+      datas.base64str = btoa(reader.result)
     }
 }
 
-const InsertMovie = gql`
-mutation AddMovie($actor_name: String!, $base64str: String!,$director_name: String!, $image_name: String!,$movie_description: String!, $movie_name: String!, $movie_type:String!, $published_year: String!) {
-  scheduleMovie(
-  actor_name: $actor_name,
-  base64str: $base64str,
-  director_name: $director_name,
-  image_name: $image_name,
-  movie_description: $movie_description,
-  movie_name:$movie_name,
-  movie_type: $movie_type,
-  published_year: $published_year) {
-    movie_name
+//  const scheduleMovie = gql`
+//    mutation scheduleMovie($cinima_id: String!, $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
+//   insert_schedule_movies(objects: {cinima_id:$cinima_id, movie_id: $movie_id, price: $price, 
+//     schedule_dates: {data: $schedule_dates}}) {
+//     affected_rows
+//   }
+// }
+//  `
+  const {mutate: movieSchedule} = useMutation( gql`
+   mutation scheduleMovie($cinima_id: String!, $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
+  insert_schedule_movies(objects: {cinima_id:$cinima_id, movie_id: $movie_id, price: $price, 
+    schedule_dates: {data: $schedule_dates}}) {
+    affected_rows
   }
 }
-`
-const {mutate: addMovie} = useMutation(InsertMovie)
+ `,{
+     variables: {
+       cinima_id: 'auth0|61aa6159cfb0050072bb13b8',
+       movie_id:'14',
+       price: '100',
+      schedule_dates: [
+    {schedule_date: "12-13-2021"},
+    {schedule_date: "02-13-2021"},
+    {schedule_date: "11-13-2021"}
+  ]
+
+     },
+ }
+ )
+
+
+
+const uploadFile = async (req, res, next) => {
+
+	try {
+// execute the parent mutation in Hasura
+		const fetchResponse = await fetch(
+   
+			'http://localhost:8000/api/upload',
+			{
+        mode: 'cors',
+				method: 'POST',
+		     headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({
+			
+          actor_name: datas.actor_name,
+          director_name: datas.director_name,
+          rating: datas.rating,
+          movie_name: datas.movie_name,
+          movie_type: datas.movie_type,
+          published_year: datas.published_year,
+          image_name: datas.image_name,
+          base64str: datas.base64str,
+          movie_description: datas.movie_description,
+
+  
+				}),
+			}
+		);
+		// const { data, errors } = await fetchResponse.json();
+		// console.log(data);
+
+	
+	} catch (e) {
+		console.error(e);
+	}
+};
 </script>
 
 <template>
@@ -67,20 +161,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
         </div>
       </div>
       <div class="mt-5 md:mt-0 md:col-span-2">
-        <form
-          @submit.prevent="
-            addMovie({
-              actor_name: data.actor_name,
-              base64str: data.base64str,
-              director_name: data.director_name,
-              image_name: data.image_name,
-              movie_description: data.movie_description,
-              movie_name: data.movie_name,
-              movie_type: data.movie_type,
-              published_year: data.published_year,
-            })
-          "
-        >
+        <form @submit.prevent="uploadFile">
           <div class="shadow overflow-hidden sm:rounded-md">
             <div class="px-4 py-5 bg-white sm:p-6">
               <div class="grid grid-cols-6 gap-6">
@@ -92,7 +173,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                   >
                   <input
                     type="text"
-                    v-model="data.actor_name"
+                    v-model="datas.actor_name"
                     class="
                       mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
@@ -114,7 +195,29 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                   >
                   <input
                     type="text"
-                    v-model="data.director_name"
+                    v-model="datas.director_name"
+                    class="
+                      mt-1
+                      focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+
+                <div class="col-span-6 sm:col-span-3">
+                  <label
+                    for="rating"
+                    class="block text-sm font-medium text-gray-700"
+                    >Rating</label
+                  >
+                  <input
+                    type="number"
+                    v-model="datas.rating"
                     class="
                       mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
@@ -136,7 +239,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                   >
                   <input
                     type="text"
-                    v-model="data.movie_name"
+                    v-model="datas.movie_name"
                     class="
                       mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
@@ -157,7 +260,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                     >Movie type</label
                   >
                   <select
-                    v-model="data.movie_type"
+                    v-model="datas.movie_type"
                     class="
                       mt-1
                       block
@@ -193,7 +296,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                   >
                   <input
                     type="date"
-                    v-model="data.published_year"
+                    v-model="datas.published_year"
                     class="
                       mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
@@ -273,7 +376,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                     </p>
 
                     <p class="text-xs text-gray-500">
-                      {{ data.image_name }}
+                      {{ datas.image_name }}
                     </p>
 
                     <p class="text-xs text-gray-500"></p>
@@ -289,7 +392,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                 </label>
                 <div class="mt-1">
                   <textarea
-                    v-model="data.movie_description"
+                    v-model="datas.movie_description"
                     rows="3"
                     class="
                       shadow-sm
@@ -342,7 +445,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
     <BaseCard>
       <template v-slot:cardHeader>
         <div class="card-header">
-          <div class="card-title py-3">All movies Added</div>
+          <div class="card-title py-3 mx-4">All movies Added</div>
         </div>
       </template>
       <div
@@ -424,7 +527,7 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                       font-semibold
                     "
                   >
-                    Date
+                    Published-year
                   </th>
                   <th
                     class="
@@ -443,19 +546,19 @@ const {mutate: addMovie} = useMutation(InsertMovie)
               <tbody>
                 <tr
                   class="hover:bg-gray-100 cursor-pointer"
-                  v-for="(n, index) in 8"
-                  :key="index"
+                  v-for="movie in movies"
+                  :key="movie.id"
                 >
                   <td class="text-xs py-5 px-4">
-                    {{ index + 1 }}
+                    {{ movie.id }}
                   </td>
 
-                  <td class="text-xs">Jhon {{ index + 1 }}</td>
+                  <td class="text-xs">{{ movie.movie_name }}</td>
                   <td class="py-5">
                     <div class="flex">
                       <img
                         class="w-9 h-9 rounded-full mr-2"
-                        src="/images/avatar.jpg"
+                        :src="movie.movie_thumbnail"
                         alt=""
                       />
                     </div>
@@ -473,23 +576,176 @@ const {mutate: addMovie} = useMutation(InsertMovie)
                         mr-3
                         text-xs
                       "
-                      >Painding</span
+                      v-if="movie.is_published"
+                      >Scheduled</span
+                    >
+                    <span
+                      class="
+                        px-3
+                        py-1
+                        rounded-full
+                        text-primary
+                        bg-yellow-700
+                        text-white
+                        border border-primary
+                        mr-3
+                        text-xs
+                      "
+                      v-else
+                      >Pending</span
                     >
                   </td>
 
-                  <td class="py-5">12-02-20</td>
+                  <td class="py-5">{{ movie.published_year }}</td>
                   <td class="py-5">
-                    <BaseBtn
-                      rounded
-                      class="
-                        border border-primary
-                        text-white
-                        bg-green-700
-                        hover:bg-primary hover:text-white
-                      "
+                    <Dialogue
+                      :thumbnail="movie.movie_thumbnail"
+                      :name="movie.movie_name"
                     >
-                      Schedule Now
-                    </BaseBtn>
+                      <template v-slot:DialogueButton>
+                        <BaseBtn
+                          rounded
+                          class="
+                            border border-primary
+                            text-white
+                            bg-green-700
+                            hover:bg-primary hover:text-white
+                          "
+                          v-if="!movie.is_published"
+                        >
+                          Schedule Now
+                        </BaseBtn>
+                      </template>
+
+                      <template v-slot:Main>
+                        <div class="mt-5 md:mt-0 md:col-span-2">
+                          <form @submit.prevent="movieSchedule">
+                            <div class="shadow overflow-hidden sm:rounded-md">
+                              <div class="px-4 py-5 bg-white sm:p-6">
+                                <div class="grid grid-cols-6 gap-6">
+                                  <div class="col-span-6 sm:col-span-4">
+                                    <label
+                                      for="movie-name"
+                                      class="
+                                        block
+                                        text-sm
+                                        font-medium
+                                        text-gray-700
+                                      "
+                                      >Set Price</label
+                                    >
+                                    <input
+                                      type="number"
+                                      v-model="scheduleData.setPrice"
+                                      class="
+                                        mt-1
+                                        focus:ring-indigo-500
+                                        focus:border-indigo-500
+                                        block
+                                        w-full
+                                        shadow-sm
+                                        sm:text-sm
+                                        border-gray-300
+                                        rounded-md
+                                      "
+                                    />
+
+                                    {{ scheduleData.setPrice }}
+                                  </div>
+
+                                  <div class="col-span-6">
+                                    <div class="flex items-center">
+                                      <label
+                                        for="published-year"
+                                        class="
+                                          block
+                                          text-sm
+                                          font-medium
+                                          text-gray-700
+                                        "
+                                        >Set Schedule Date</label
+                                      >
+                                      <BaseBtn @click="handleAdd">
+                                        <span
+                                          class="
+                                            bg-gray-200
+                                            shadow-sm
+                                            p-1
+                                            rounded-md
+                                            inline-flex
+                                            text-lg
+                                            items-center
+                                          "
+                                        >
+                                          <PlusIcon
+                                            class="h-5 w-5 text-green-700 ml-1"
+                                          />
+                                        </span>
+                                      </BaseBtn>
+                                    </div>
+                                    <div
+                                      class="flex"
+                                      v-for="(item, index) in scheduleData"
+                                      :key="index"
+                                    >
+                                      <input
+                                        type="date"
+                                        v-model="item.scheduleData"
+                                        class="
+                                          mt-3
+                                          focus:ring-indigo-500
+                                          focus:border-indigo-500
+                                          block
+                                          w-full
+                                          shadow-sm
+                                          sm:text-sm
+                                          border-gray-300
+                                          rounded-md
+                                        "
+                                      />
+
+                                      <button @click="handleRemove">
+                                        <XIcon
+                                          class="h-5 w-5 text-red-700 ml-1"
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div
+                                class="px-4 py-3 bg-gray-50 text-right sm:px-6"
+                              >
+                                <button
+                                  type="submit"
+                                  class="
+                                    inline-flex
+                                    justify-center
+                                    py-2
+                                    px-4
+                                    border border-transparent
+                                    shadow-sm
+                                    text-sm
+                                    font-medium
+                                    rounded-md
+                                    text-white
+                                    bg-indigo-600
+                                    hover:bg-indigo-700
+                                    focus:outline-none
+                                    focus:ring-2
+                                    focus:ring-offset-2
+                                    focus:ring-indigo-500
+                                  "
+                                >
+                                  Schedule Now
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </template>
+                    </Dialogue>
 
                     <BaseBtn
                       rounded

@@ -1,3 +1,46 @@
+<script setup>
+import { reactive } from 'vue';
+import {XIcon} from '@heroicons/vue/outline'
+import {PlusIcon} from '@heroicons/vue/outline'
+import { gql } from 'graphql-tag';
+//import {  useMutation } from '@vue/apollo-composable'
+import {  useQuery, useResult } from '@vue/apollo-composable'
+
+const scheduleData = reactive ([
+   {setPrice: ''},
+   {scheduleDate: ''}
+])
+
+const scheduleNow = () => {
+
+  console.log(scheduleData)
+}
+// handle add button 
+const handleAdd = () => {
+  scheduleData.push({scheduleDate: ''})
+}
+const handleRemove = () => {
+  scheduleData.pop()
+}
+const getMovies = gql`
+query getMovies {
+  movies {
+    id
+    movie_name
+    movie_type
+    movie_thumbnail
+    is_published
+    published_year
+  }
+}
+
+`
+const {result, error} = useQuery(getMovies)
+const movies = useResult(result, null, (data) => data.movies)
+
+</script>
+
+
 <template>
   <div class="col-span-12">
     <BaseCard>
@@ -115,19 +158,19 @@
               <tbody>
                 <tr
                   class="hover:bg-gray-100 cursor-pointer"
-                  v-for="(n, index) in 8"
-                  :key="index"
+                  v-for="movie in movies"
+                  :key="movie.id"
                 >
                   <td class="text-xs py-5 px-4">
-                    {{ index + 1 }}
+                    {{ movie.id }}
                   </td>
 
-                  <td class="text-xs">Jhon {{ index + 1 }}</td>
+                  <td class="text-xs">{{ movie.movie_name }}</td>
                   <td class="py-5">
                     <div class="flex">
                       <img
                         class="w-9 h-9 rounded-full mr-2"
-                        src="/images/avatar.jpg"
+                        :src="movie.movie_thumbnail"
                         alt=""
                       />
                     </div>
@@ -151,17 +194,153 @@
                   <td class="py-5">{{ 3.34 * index + 1 }}%</td>
                   <td class="py-5">12-02-20</td>
                   <td class="py-5">
-                    <BaseBtn
-                      rounded
-                      class="
-                        border border-primary
-                        text-white
-                        bg-blue-900
-                        hover:bg-primary hover:text-white
-                      "
+                    <Dialogue
+                      :thumbnail="movie.movie_thumbnail"
+                      :name="movie.movie_name"
                     >
-                      Update
-                    </BaseBtn>
+                      <template v-slot:DialogueButton>
+                        <BaseBtn
+                          rounded
+                          class="
+                            border border-primary
+                            text-white
+                            bg-blue-700
+                            hover:bg-primary hover:text-white
+                          "
+                        >
+                          Update
+                        </BaseBtn>
+                      </template>
+
+                      <template v-slot:Main>
+                        <div class="mt-5 md:mt-0 md:col-span-2">
+                          <form @submit.prevent="scheduleNow">
+                            <div class="shadow overflow-hidden sm:rounded-md">
+                              <div class="px-4 py-5 bg-white sm:p-6">
+                                <div class="grid grid-cols-6 gap-6">
+                                  <div class="col-span-6 sm:col-span-4">
+                                    <label
+                                      for="movie-name"
+                                      class="
+                                        block
+                                        text-sm
+                                        font-medium
+                                        text-gray-700
+                                      "
+                                      >Set Price</label
+                                    >
+                                    <input
+                                      type="number"
+                                      v-model="scheduleData.setPrice"
+                                      class="
+                                        mt-1
+                                        focus:ring-indigo-500
+                                        focus:border-indigo-500
+                                        block
+                                        w-full
+                                        shadow-sm
+                                        sm:text-sm
+                                        border-gray-300
+                                        rounded-md
+                                      "
+                                    />
+
+                                    {{ scheduleData.setPrice }}
+                                  </div>
+
+                                  <div class="col-span-6">
+                                    <div class="flex items-center">
+                                      <label
+                                        for="published-year"
+                                        class="
+                                          block
+                                          text-sm
+                                          font-medium
+                                          text-gray-700
+                                        "
+                                        >Set Schedule Date</label
+                                      >
+                                      <BaseBtn @click="handleAdd">
+                                        <span
+                                          class="
+                                            bg-gray-200
+                                            shadow-sm
+                                            p-1
+                                            rounded-md
+                                            inline-flex
+                                            text-lg
+                                            items-center
+                                          "
+                                        >
+                                          <PlusIcon
+                                            class="h-5 w-5 text-green-700 ml-1"
+                                          />
+                                        </span>
+                                      </BaseBtn>
+                                    </div>
+                                    <div
+                                      class="flex"
+                                      v-for="(item, index) in scheduleData"
+                                      :key="index"
+                                    >
+                                      <input
+                                        type="date"
+                                        v-model="item.scheduleData"
+                                        class="
+                                          mt-3
+                                          focus:ring-indigo-500
+                                          focus:border-indigo-500
+                                          block
+                                          w-full
+                                          shadow-sm
+                                          sm:text-sm
+                                          border-gray-300
+                                          rounded-md
+                                        "
+                                      />
+
+                                      <button @click="handleRemove">
+                                        <XIcon
+                                          class="h-5 w-5 text-red-700 ml-1"
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div
+                                class="px-4 py-3 bg-gray-50 text-right sm:px-6"
+                              >
+                                <button
+                                  type="submit"
+                                  class="
+                                    inline-flex
+                                    justify-center
+                                    py-2
+                                    px-4
+                                    border border-transparent
+                                    shadow-sm
+                                    text-sm
+                                    font-medium
+                                    rounded-md
+                                    text-white
+                                    bg-indigo-600
+                                    hover:bg-indigo-700
+                                    focus:outline-none
+                                    focus:ring-2
+                                    focus:ring-offset-2
+                                    focus:ring-indigo-500
+                                  "
+                                >
+                                  Schedule Now
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </template>
+                    </Dialogue>
                     <BaseBtn
                       rounded
                       class="
