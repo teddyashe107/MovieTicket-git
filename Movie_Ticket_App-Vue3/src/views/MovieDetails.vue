@@ -1,17 +1,17 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from "vue";
 
 import { useAuth0, AuthState } from "../auth/index";
-const { login, logout, initAuth} = useAuth0(AuthState);
+const { login, logout, initAuth } = useAuth0(AuthState);
 import { useQuery, useResult, useMutation } from "@vue/apollo-composable";
 import { gql } from "graphql-tag";
-import {useRoute, useRouter} from 'vue-router'
-import { StarIcon } from '@heroicons/vue/solid'
-import {XIcon} from '@heroicons/vue/outline'
-import {ClockIcon} from '@heroicons/vue/outline'
-import {PlusIcon} from '@heroicons/vue/outline'
-import {useStore} from 'vuex'
-import Swal from 'sweetalert2'
+import { useRoute, useRouter } from "vue-router";
+import { StarIcon } from "@heroicons/vue/solid";
+import { XIcon } from "@heroicons/vue/outline";
+import { ClockIcon } from "@heroicons/vue/outline";
+import { PlusIcon } from "@heroicons/vue/outline";
+import { useStore } from "vuex";
+import Swal from "sweetalert2";
 
 import {
   Dialog,
@@ -21,156 +21,172 @@ import {
   RadioGroupOption,
   TransitionChild,
   TransitionRoot,
-} from '@headlessui/vue'
-
+} from "@headlessui/vue";
 
 initAuth();
 // get instance of store
-
+//
 // onMounted(() => {
-//   const store = useStore()
-//   const route = useRoute()
-//   const id = route.params.id
-//   store.dispatch('home/getAllComments', id)
-//  store.dispatch('home/getMovieDetail', id)
-// })
+//   const store = useStore();
+//   const route = useRoute();
+//   const id = route.params.id;
+//   store.dispatch("home/getAllComments", id);
+//   store.dispatch("home/getMovieDetail", id);
+// });
 
-
-
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 // get and store scheduled movie id form home page
-const movieInfo  = route.params.id
+const movieInfo = route.params.id;
 
 // get instance of store
-const store = useStore()
+const store = useStore();
 // show detail of movie  // movie detail
-const test2 = computed(() => store.state.home.viewMovie)
+const test2 = computed(() => store.state.home.viewMovie);
 
 // get all comments from the store
-const comments = computed(() => store.state.home.comments)
+const comments = computed(() => store.state.home.comments);
 
-// this used to store scheduled date of the movie 
-const product = reactive( {
- date_and_time: [],
-})
+// this used to store scheduled date of the movie
+const product = reactive({
+  date_and_time: [],
+});
 
 // extract the movie schadule date_time in to js date and store it in product array
 
-test2.value.schedule_dates.forEach((data)=> {
-  const days = ["Mon", "The", "Wed","Thu","Fri","Sat", "Sun"]
-  const monthes = ["January", "February", "March", "April", "May"," June", "July", "August", "September"," October", "November", "December"]
-  const date = new Date(data.schedule_date)
-  product.date_and_time.push({name: days[date.getDay()] + ', ' + monthes[date.getMonth()] + '-' + date.getDate() + ' ' + date.getFullYear() + ' at ' + date.getHours() + ':' + date.getMinutes(), inStock: true})
-  
-})
+test2.value.schedule_dates.forEach((data) => {
+  const days = ["Mon", "The", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const monthes = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    " June",
+    "July",
+    "August",
+    "September",
+    " October",
+    "November",
+    "December",
+  ];
+  const date = new Date(data.schedule_date);
+  product.date_and_time.push({
+    name:
+      days[date.getDay()] +
+      ", " +
+      monthes[date.getMonth()] +
+      "-" +
+      date.getDate() +
+      " " +
+      date.getFullYear() +
+      " at " +
+      date.getHours() +
+      ":" +
+      date.getMinutes(),
+    inStock: true,
+  });
+});
 
 const date = reactive({
-  date: test2.value.schedule_dates
-})
+  date: test2.value.schedule_dates,
+});
 
-// fetch movies detail by movie id 
+// fetch movies detail by movie id
 
-const {result} =  useQuery(gql `
-query moiveDetail($id: Int!) {
-  schedule_movies(where: {id: {_eq: $id}}) {
-
-    price
-    cinima {
-      cinima_name
+const { result } = useQuery(
+  gql`
+    query moiveDetail($id: Int!) {
+      schedule_movies(where: { id: { _eq: $id } }) {
+        price
+        cinima {
+          cinima_name
+        }
+        schedule_dates {
+          schedule_date
+        }
+        movie {
+          id
+          movie_name
+          movie_thumbnail
+          movie_type
+          published_year
+          rating
+          movie_description
+          director_name
+          actor_name
+        }
+      }
     }
-    schedule_dates {
-      schedule_date
-    }
-    movie {
-      id
-      movie_name
-      movie_thumbnail
-      movie_type
-      published_year
-      rating
-      movie_description
-      director_name
-      actor_name
-    }
+  `,
+  {
+    id: movieInfo,
   }
-}
-
-`, {
-  id: movieInfo
-}
 );
 // store fetch movies() response in reactive state
-const movieDetail = useResult(result, null, (data) => data.schedule_movies)
+const movieDetail = useResult(result, null, (data) => data.schedule_movies);
 
 // comment data to be inserted by the user
 const commentData = reactive({
   schedule_id: movieInfo,
-  content: '',
-})
+  content: "",
+});
 
 // send comment data to the server
 function addComment() {
- store.commit('home/setCommentData', commentData)
- store.dispatch('home/addComment')
-
+  store.commit("home/setCommentData", commentData);
+  store.dispatch("home/addComment");
 }
 
 // thank you page for booking the ticket
 const thankYouPage = () => {
   router.push({
-    name: 'ThankYou'
-  })
-}
+    name: "ThankYou",
+  });
+};
 
 // data from booking form
 const Book = reactive({
-        name: '',
-				email: '',
-				phone_number: '',
-				number_of_ticket: 1,
-				cinima_id: 'google-oauth2|115138731985644817694',
-				scheduled_movie_id: movieInfo,
-				booking_date: '' ,
-				payment_varified: false,
+  name: "",
+  email: "",
+  phone_number: "",
+  number_of_ticket: 1,
+  cinima_id: "google-oauth2|115138731985644817694",
+  scheduled_movie_id: movieInfo,
+  booking_date: "",
+  payment_varified: false,
+});
 
-})
+// set user selected scheduled date
 
-// set user selected scheduled date 
-
-function getScheduleDate (index) {
-        Book.booking_date = test2.value.schedule_dates[index].schedule_date
- 
+function getScheduleDate(index) {
+  Book.booking_date = test2.value.schedule_dates[index].schedule_date;
 }
 
 // cheak booking form data
 const cheakBookingForm = () => {
-  store.commit('home/setReservationData', Book)
-  store.dispatch('home/addReservation')
-// console.log(store.state.home.reservationData)
-  
+  store.commit("home/setReservationData", Book);
+  store.dispatch("home/addReservation");
+  // console.log(store.state.home.reservationData)
+};
+
+const movie_price = reactive({
+  price: test2.value.price,
+  exact_price: computed(() => test2.value.price * Book.number_of_ticket),
+});
+
+function showStatus() {
+  console.log(store.state.home.bookError);
+  //        if(store.state.home.bookError.value !== null){
+  //          Swal.fire({
+  //                 icon: 'error',
+  //                 title: 'Oops...',
+  //                 text: 'Something went wrong!',
+  //
+  // })
 }
 
-const movie_price  = reactive ({
-  price: test2.value.price,
-  exact_price: computed(() => test2.value.price * Book.number_of_ticket)
-})
-
-function showStatus(){
-  console.log(store.state.home.bookError)
-//        if(store.state.home.bookError.value !== null){
-//          Swal.fire({
-//                 icon: 'error',
-//                 title: 'Oops...',
-//                 text: 'Something went wrong!',
-//         
-// })
-   
-} 
-
 //console.log(store.state.home.boo)
-
-
 </script>
 
 <template>
