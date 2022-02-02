@@ -1,6 +1,6 @@
 <script setup>
 import { useStore } from 'vuex'
-import Header from '../admin/layouts/Header.vue'
+import Header from '@/layouts/Header.vue'
 import Sidebar from '../admin/layouts/Sidebar.vue'
 import Footer from './layouts/Footer.vue'
 

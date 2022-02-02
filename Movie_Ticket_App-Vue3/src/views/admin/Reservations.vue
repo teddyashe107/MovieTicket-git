@@ -1,3 +1,45 @@
+<script setup>
+import {ref, reactive, computed, onMounted } from 'vue';
+import {XIcon} from '@heroicons/vue/outline'
+import {PlusIcon} from '@heroicons/vue/outline'
+import { gql } from 'graphql-tag';
+//import {  useMutation } from '@vue/apollo-composable'
+import {  useQuery, useResult, useSubscription } from '@vue/apollo-composable'
+
+
+
+
+const getReservation = gql`
+query getReservation {
+  ticket_reservation {
+    id
+    name
+    email
+    number_of_ticket
+    payment_varified
+    phone_number
+    booking_date
+    scheduled_movie_id
+  
+    schedule_movie {
+      movie {
+        movie_name
+        movie_thumbnail
+      }
+    }
+  }
+}
+
+`
+const {result, error} = useQuery(getReservation)
+const coustomers = useResult(result, null, (data) => data.ticket_reservation)
+
+
+
+</script>
+
+
+
 <template>
   <div class="col-span-12">
     <BaseCard>
@@ -115,24 +157,19 @@
               <tbody>
                 <tr
                   class="hover:bg-gray-100 cursor-pointer"
-                  v-for="(n, index) in 8"
+                  v-for="(item, index) in coustomers"
                   :key="index"
                 >
                   <td class="text-xs py-5 px-4">
-                    {{ index + 1 }}
+                    {{ item.id }}
                   </td>
 
-                  <td class="text-xs">Jhon {{ index + 1 }}</td>
+                  <td class="text-xs">{{ item.name }}</td>
                   <td class="py-5">
                     <div class="flex">
                       <img
                         class="w-9 h-9 rounded-full mr-2"
-                        src="/images/avatar.jpg"
-                        alt=""
-                      />
-                      <img
-                        class="w-9 h-9 rounded-full mr-2"
-                        src="/images/avatar.jpg"
+                        :src="item.schedule_movie.movie.movie_thumbnail"
                         alt=""
                       />
                     </div>
@@ -143,18 +180,36 @@
                         px-3
                         py-1
                         rounded-full
-                        text-primary
-                        bg-green-700
-                        text-white
+                        text-primary text-white
                         border border-primary
                         mr-3
                         text-xs
                       "
-                      >Painding</span
+                      :class="
+                        item.payment_varified ? 'bg-green-700' : 'bg-red-700'
+                      "
+                      v-if="item.payment_varified"
+                      >Paid</span
+                    >
+                    <span
+                      class="
+                        px-3
+                        py-1
+                        rounded-full
+                        text-primary text-white
+                        border border-primary
+                        mr-3
+                        text-xs
+                      "
+                      :class="
+                        item.payment_varified ? 'bg-green-700' : 'bg-red-700'
+                      "
+                      v-else
+                      >not paid</span
                     >
                   </td>
-                  <td class="py-5">{{ 3.34 * index + 1 }}%</td>
-                  <td class="py-5">12-02-20</td>
+                  <td class="py-5">0 Birr</td>
+                  <td class="py-5">{{ item.booking_date }}</td>
                   <td class="py-5">
                     <BaseBtn
                       rounded

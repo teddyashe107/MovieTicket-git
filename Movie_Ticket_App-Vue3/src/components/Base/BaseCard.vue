@@ -1,6 +1,7 @@
 <script setup>
 const props = defineProps({
     noPadding: Boolean,
+    
 })
 </script>
 <template>

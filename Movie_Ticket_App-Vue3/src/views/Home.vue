@@ -1,175 +1,139 @@
 <script setup>
-import {useQuery, useResult, useApolloClient, useSubscription } from '@vue/apollo-composable'
+
 import {gql} from 'graphql-tag'
-import {useRoute,useRouter} from 'vue-router';
-import{computed, reactive, ref} from'vue'
-import { StarIcon } from '@heroicons/vue/solid'
+import {useRouter} from 'vue-router';
+import{computed, onMounted} from'vue'
+import { sendNotification} from '../firebase/config'
+import {useSubscription, useResult} from '@vue/apollo-composable'
 
-  const product = {
-    rating: 3.9
-  }
-/*
-const {resolveClient} = useApolloClient()
-const client = resolveClient('')
-*/
+import {  useStore } from 'vuex'
+
+// get instance of router
 const router = useRouter()
-const route = useRoute()
+
+// send fcm user token to the server
+ sendNotification()
 
 
 
-const getScheduledMovie = gql `
-query getMovies {
-  schedule_movies {
-    id
-    movie {
-      name
-      movie_type
-      price
-      published_year
-    }
-  }
+// initialise the store
+const store = useStore()
+
+// dispath  action to get all movies
+store.dispatch('home/getAllMovies')
+
+
+// get all movies from the store
+const movieData = computed(() => store.state.home.movieDetails)
+
+// show the details of the movie
+function movieDetailPage (id) {
+store.dispatch('home/getAllComments', id)
+ store.dispatch('home/getMovieDetail', id)
+
+  router.push({
+   name: 'ViewMovie',
+    params: {
+      id: id
+    }  
+  })
+
 }
+// 
+// const { result, error } = useSubscription(
+// 							gql`
+// 					subscription getReservation {
+// 						ticket_reservation {
+// 							id
+// 							name
+// 							email
+// 							number_of_ticket
+// 							payment_varified
+// 							phone_number
+// 							booking_date
+// 							scheduled_movie_id
+// 						}
+// 					}
+// 				`
+// 			);
+// 		
+// 
+// console.error(result)
+// console.log(error)
+// 
+// 
+
+// // get new movies added by using subscription
+// 
+// const {result: newMovies} = useSubscription(gql `
+// subscription onNewMovieAdded {
+//   schedule_movies(offset: 2) {
+//     id
+//     price
+//     cinima {
+//       cinima_name
+//     }
+//     schedule_dates {
+//       schedule_date
+//     }
+//     movie {
+//       movie_name
+//       movie_thumbnail
+//       movie_type
+//       published_year
+//       rating
+//       movie_description
+//       director_name
+//       actor_name
+//     }
+//   }
+// }
+// 
+// `)
+// 
+// const newMoviesAdded = useResult(newMovies, null, (data) => data.schedule_movies)
+// console.log(newMovies.value)
 
 
-`
+// end of all comments
 
-
-const {result} = useQuery(getScheduledMovie);
-const scheduledMovies = useResult(result, null, (data) => data.schedule_movies)
-
-//console.log(scheduledMovies)
-/*
-const myMovies = () => {
-  console.log(client)
-}
-*/
-const movies = ref([
-  {
-    id: 1,
-    rating: 5,
-    name: "Lost",
-    description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "horror",
-    image_path: "/images/teda.jpg",
-  },
-  {
-    id: 2,
-    rating: 4.5,
-    name: "Prison Break",
-     description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "action",
-    image_path: "/images/teda.jpg",
-  },
-  {
-    id: 3,
-    rating: 4,
-    name: "The Vampire",
-     description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "horror",
-    image_path: "/images/teda.jpg",
-  },
-  {
-    id: 4,
-    rating: 3,
-    name: "Love",
-     description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "romantic",
-    image_path: "/images/teda.jpg",
-  },
-  {
-    id: 5,
-    rating: 2,
-    name: "kid",
-     description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "family",
-    image_path: "/images/teda.jpg",
-  },
-  {
-    id: 6,
-    rating: 1,
-    name: "noon",
-     description: 'ServicesBrandingDesignMarketingAdvertisementCompanyAbout usContactJobsPress kitLegalTerms of usePrivacy policyCookie policy',
-    type: "horror",
-    image_path: "/images/teda.jpg",
-  },
-])
-
-
-function newPage (name) {
- const movieDetail = computed(() => {
-  return movies.value.filter(data => data.name.includes(name))
-
-})
- const dataP = JSON.parse(JSON.stringify(movieDetail.value))
- // console.log(dataP[0].name)
-   router.push({
-     name: 'MovieDetails', 
-     params : { name: name},
-     query: {
-       name: dataP[0].name,
-       rating: dataP[0].rating,
-       description: dataP[0].description,
-       thumbnail: dataP[0].image_path
-     
-     }})
-}
-
-
-
-const show = () => {
-  console.table(movies);
-};
 </script>
 
 <template>
-  <ul>
-    <li v-for="movie in scheduledMovies" :key="movie.id">
-      <div class="flex flex-col">
-        <div class="flex-1">
-          <div class="text-xl font-semibold">{{ movie.movie.name }}</div>
-          <div class="text-sm font-semibold">{{ movie.movie.movie_type }}</div>
-        </div>
-        <div class="flex-1">
-          <div class="text-xl font-semibold">{{ movie.movie.price }}</div>
-          <div class="text-sm font-semibold">
-            {{ movie.movie.published_year }}
-          </div>
-        </div>
-      </div>
-    </li>
-  </ul>
-
   <Hero />
-  <div
-    class="
-      flex flex-col
-      ml-auto
-      justify-center
-      max-w-full
-      bg-gray-900
-      h-20
-      tracking-tight
-      border-b
-      shadow-lg
-    "
-  >
-    <h1
-      class="
-        mx-auto
-        bg-gradient-to-r
-        from-purple-900
-        to-pink-300
-        bg-clip-text
-        text-transparent text-xs
-        font font-bold
-        sm:text-3xl
-      "
-    >
-      Recommended Movies
-    </h1>
+  <div class="bg-gray-900">
+    <div class="sm:justify-center container mx-auto">
+      <h1
+        class="
+          text-4xl
+          font font-extrabold
+          tracking-tight
+          bg-gradient-to-r
+          from-gray-100
+          to-white
+          bg-clip-text
+          text-transparent text-left
+          leading-10
+          pt-8
+        "
+      >
+        Recommended Movies
+      </h1>
+    </div>
   </div>
 
-  <div class="pt-11">
+  <div v-if="store.state.home.loading">
+    <div class="flex justify-center text-6xl bg-gray-900 p-10 items-center">
+      <div class="loader"></div>
+    </div>
+  </div>
+  <div v-else-if="store.state.home.error">
+    <div class="flex justify-center text-white bg-red-600 text-3xl">
+      <p>Something went wrong</p>
+    </div>
+  </div>
+
+  <div class="pt-11 bg-gray-900 text-white" v-else>
     <!-- card example -->
     <div
       class="
@@ -181,13 +145,8 @@ const show = () => {
         gap-4
       "
     >
-      <div
-        class="container mx-auto"
-        v-for="movie in movies"
-        :key="movie.id"
-        @click="newPage(movie.name)"
-      >
-        <div class="flex flex-wrap -mx-4">
+      <div class="container mx-auto" v-for="movie in movieData" :key="movie.id">
+        <div @click="movieDetailPage(movie.id)" class="flex flex-wrap -mx-4">
           <div
             class="
               w-full
@@ -203,7 +162,7 @@ const show = () => {
             <div class="relative pb-96 overflow-hidden">
               <img
                 class="absolute inset-0 rounded-lg h-full w-full object-cover"
-                src="/images/The-Avengers-Poster-013.jpg"
+                :src="movie.movie.movie_thumbnail"
                 alt=""
                 loading="lazy"
               />
@@ -211,7 +170,6 @@ const show = () => {
             <div class="p-4">
               <span
                 class="
-                  inline-block
                   px-2
                   py-1
                   leading-none
@@ -222,28 +180,30 @@ const show = () => {
                   uppercase
                   tracking-wide
                   text-xs
+                  inline-flex
+                  space-x-2
                 "
-                >November 11/30/21</span
+                >{{ movie.movie.movie_type }}</span
               >
 
               <h2 class="mt-2 mb-2 font-bold">
-                Purus Ullamcorper Inceptos Nibh
+                {{ movie.movie.movie_name }}
               </h2>
 
-              <div class="mt-3 flex items-center">
-                <span class="text-sm font-semibold">ab</span>&nbsp;<span
-                  class="font-bold text-xl"
-                  >45,00</span
-                >&nbsp;<span class="text-sm font-semibold">€</span>
+              <div class="mt-3 flex items-baseline">
+                <span class="font-bold text-xl mr-1">{{ movie.price }}</span>
+                <span class="text-sm font-semibold">Birr</span>
               </div>
             </div>
 
-            <div class="flex items-center">
+            <div class="flex items-center ml-3">
               <StarIcon
                 v-for="rating in [0, 1, 2, 3, 4]"
                 :key="rating"
                 :class="[
-                  movie.rating > rating ? 'text-pink-700' : 'text-gray-200',
+                  movie.movie.rating > rating
+                    ? 'text-pink-700'
+                    : 'text-gray-200',
                   'h-5 w-5 flex-shrink-0',
                 ]"
                 aria-hidden="true"
@@ -255,12 +215,84 @@ const show = () => {
     </div>
   </div>
 </template>
-<style lang="sass">
-.c-card
+<style scoped>
+.loader {
+  transform: rotateZ(45deg);
+  perspective: 1000px;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: #fff;
+}
+.loader:before,
+.loader:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: inherit;
+  height: inherit;
+  border-radius: 50%;
+  transform: rotateX(70deg);
+  animation: 1s spin linear infinite;
+}
+.loader:after {
+  color: #ff3d00;
+  transform: rotateY(70deg);
+  animation-delay: 0.4s;
+}
+
+@keyframes rotate {
+  0% {
+    transform: translate(-50%, -50%) rotateZ(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotateZ(360deg);
+  }
+}
+
+@keyframes rotateccw {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes spin {
+  0%,
+  100% {
+    box-shadow: 0.2em 0px 0 0px currentcolor;
+  }
+  12% {
+    box-shadow: 0.2em 0.2em 0 0 currentcolor;
+  }
+  25% {
+    box-shadow: 0 0.2em 0 0px currentcolor;
+  }
+  37% {
+    box-shadow: -0.2em 0.2em 0 0 currentcolor;
+  }
+  50% {
+    box-shadow: -0.2em 0 0 0 currentcolor;
+  }
+  62% {
+    box-shadow: -0.2em -0.2em 0 0 currentcolor;
+  }
+  75% {
+    box-shadow: 0px -0.2em 0 0 currentcolor;
+  }
+  87% {
+    box-shadow: 0.2em -0.2em 0 0 currentcolor;
+  }
+}
+
+/*
+        .c-card
 img
   transition: transform .3s ease-in-out
 
-:hover
-  img
-    transform: scale(1.05)
+  */
 </style>

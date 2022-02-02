@@ -1,144 +1,331 @@
- <template>
-  <div>
+<script setup>
+import { reactive } from 'vue';
+import { gql } from 'graphql-tag';
+//import {  useMutation } from '@vue/apollo-composable'
+import {  useQuery, useResult, useMutation } from '@vue/apollo-composable'
+import { useAuth0, AuthState } from "@/auth/index";
+const { login, logout, initAuth, getToken, isAuthenticated} = useAuth0(AuthState);
+import {XIcon} from '@heroicons/vue/outline'
+import {PlusIcon} from '@heroicons/vue/outline'
+
+//console.log(userInfo.sub)
+const getMovies = gql`
+query getMovies {
+  movies {
+    id
+    movie_name
+    movie_type
+    movie_thumbnail
+    is_published
+    published_year
+  }
+}
+`
+const {result, error} = useQuery(getMovies)
+const movies = useResult(result, null, (data) => data.movies)
+//console.log(movies)
+const datas = reactive({
+    actor_name: '',
+    director_name: '',
+    rating: '',
+    movie_name: '',
+    movie_type: '',
+    published_year: '',
+    image_name: '',
+    base64str: '',
+    movie_description: '',
+})
+const scheduleData = reactive ([
+   {setPrice: ''},
+   {scheduleDate: ''}
+])
+const scheduleNow = () => {
+  console.log(scheduleData)
+}
+// handle add button 
+const handleAdd = () => {
+  scheduleData.push({scheduleDate: ''})
+}
+const handleRemove = () => {
+  scheduleData.pop()
+}
+function onFileChange(e) {
+   datas.image_name = e.target.files[0].name;
+    const reader = new FileReader();
+    if(e.target.files[0]){
+      reader.readAsBinaryString(e.target.files[0])
+      
+    }
+   
+    reader.onload = () => {
+      datas.base64str = btoa(reader.result)
+    }
+}
+//  const scheduleMovie = gql`
+//    mutation scheduleMovie($cinima_id: String!, $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
+//   insert_schedule_movies(objects: {cinima_id:$cinima_id, movie_id: $movie_id, price: $price, 
+//     schedule_dates: {data: $schedule_dates}}) {
+//     affected_rows
+//   }
+// }
+//  `
+  const {mutate: movieSchedule} = useMutation( gql`
+   mutation scheduleMovie($cinima_id: String!, $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
+  insert_schedule_movies(objects: {cinima_id:$cinima_id, movie_id: $movie_id, price: $price, 
+    schedule_dates: {data: $schedule_dates}}) {
+    affected_rows
+  }
+}
+ `,{
+     variables: {
+       cinima_id: 'auth0|61aa6159cfb0050072bb13b8',
+       movie_id:'14',
+       price: '100',
+      schedule_dates: [
+    {schedule_date: "12-13-2021"},
+    {schedule_date: "02-13-2021"},
+    {schedule_date: "11-13-2021"}
+  ]
+     },
+ }
+ )
+const uploadFile = async (req, res, next) => {
+	try {
+// execute the parent mutation in Hasura
+		const fetchResponse = await fetch(
+   
+			'http://localhost:8000/api/upload',
+			{
+        mode: 'cors',
+				method: 'POST',
+		     headers: {
+           'Content-Type': 'application/json', 
+           'Authorization': window.localStorage.getItem('idToken')
+         },
+				body: JSON.stringify({
+			
+          actor_name: datas.actor_name,
+          director_name: datas.director_name,
+          rating: datas.rating,
+          movie_name: datas.movie_name,
+          movie_type: datas.movie_type,
+          published_year: datas.published_year,
+          image_name: datas.image_name,
+          base64str: datas.base64str,
+          movie_description: datas.movie_description,
+  
+				}),
+			}
+		);
+		// const { data, errors } = await fetchResponse.json();
+		// console.log(data);
+	
+	} catch (e) {
+		console.error(e);
+	}
+};
+
+
+const{mutate: deleteMovie} = useMutation(gql`
+mutation deleteMovie($id: Int!) {
+  delete_movies_by_pk(id: $id) {
+    id
+  }
+}
+`)
+function deleteAndUpdateMovie(id){
+    deleteMovie({id: id}, {
+     update: (store, {}) => {
+       const data = store.readQuery({query: getMovies})
+       const updatedData = data.movies.filter(movie => movie.id !== id)
+       store.writeQuery({
+         query: getMovies,
+         data: {
+           movies: updatedData
+         }
+       })
+
+       return updatedData
+     }
+    })
+}
+</script>
+
+<template>
+  <div class="hidden sm:block" aria-hidden="true">
+    <div class="py-5">
+      <div class="border-t border-gray-200" />
+    </div>
+  </div>
+
+  <div class="mt-10 sm:mt-0">
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="md:col-span-1">
         <div class="px-4 sm:px-0">
-          <h3 class="text-lg font-medium leading-6 text-gray-900">Profile</h3>
+          <h3 class="text-lg font-medium leading-6 text-gray-900">
+            Create new movie as cinima
+          </h3>
           <p class="mt-1 text-sm text-gray-600">
-            This information will be displayed publicly so be careful what you
-            share.
+            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Maiores,
+            consectetur!
           </p>
         </div>
       </div>
       <div class="mt-5 md:mt-0 md:col-span-2">
-        <form action="#" method="POST">
-          <div class="shadow sm:rounded-md sm:overflow-hidden">
-            <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-              <div class="grid grid-cols-3 gap-6">
-                <div class="col-span-3 sm:col-span-2">
+        <form @submit.prevent="uploadFile">
+          <div class="shadow overflow-hidden sm:rounded-md">
+            <div class="px-4 py-5 bg-white sm:p-6">
+              <div class="grid grid-cols-6 gap-6">
+                <div class="col-span-6 sm:col-span-3">
                   <label
-                    for="company-website"
+                    for="actor-name"
                     class="block text-sm font-medium text-gray-700"
+                    >Actor Name</label
                   >
-                    Website
-                  </label>
-                  <div class="mt-1 flex rounded-md shadow-sm">
-                    <span
-                      class="
-                        inline-flex
-                        items-center
-                        px-3
-                        rounded-l-md
-                        border border-r-0 border-gray-300
-                        bg-gray-50
-                        text-gray-500 text-sm
-                      "
-                    >
-                      http://
-                    </span>
-                    <input
-                      type="text"
-                      name="company-website"
-                      id="company-website"
-                      class="
-                        focus:ring-indigo-500 focus:border-indigo-500
-                        flex-1
-                        block
-                        w-full
-                        rounded-none rounded-r-md
-                        sm:text-sm
-                        border-gray-300
-                      "
-                      placeholder="www.example.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  for="about"
-                  class="block text-sm font-medium text-gray-700"
-                >
-                  About
-                </label>
-                <div class="mt-1">
-                  <textarea
-                    id="about"
-                    name="about"
-                    rows="3"
+                  <input
+                    type="text"
+                    v-model="datas.actor_name"
                     class="
-                      shadow-sm
+                      mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+
+                <div class="col-span-6 sm:col-span-3">
+                  <label
+                    for="director-name"
+                    class="block text-sm font-medium text-gray-700"
+                    >Director Name</label
+                  >
+                  <input
+                    type="text"
+                    v-model="datas.director_name"
+                    class="
+                      mt-1
+                      focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+
+                <div class="col-span-6 sm:col-span-3">
+                  <label
+                    for="rating"
+                    class="block text-sm font-medium text-gray-700"
+                    >Rating</label
+                  >
+                  <input
+                    type="number"
+                    v-model="datas.rating"
+                    class="
+                      mt-1
+                      focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <label
+                    for="movie-name"
+                    class="block text-sm font-medium text-gray-700"
+                    >Movie Name</label
+                  >
+                  <input
+                    type="text"
+                    v-model="datas.movie_name"
+                    class="
+                      mt-1
+                      focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+
+                <div class="col-span-6 sm:col-span-3">
+                  <label
+                    for="movie-type"
+                    class="block text-sm font-medium text-gray-700"
+                    >Movie type</label
+                  >
+                  <select
+                    v-model="datas.movie_type"
+                    class="
                       mt-1
                       block
                       w-full
-                      sm:text-sm
-                      border border-gray-300
-                      rounded-md
-                    "
-                    placeholder="you@example.com"
-                  />
-                </div>
-                <p class="mt-2 text-sm text-gray-500">
-                  Brief description for your profile. URLs are hyperlinked.
-                </p>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  Photo
-                </label>
-                <div class="mt-1 flex items-center">
-                  <span
-                    class="
-                      inline-block
-                      h-12
-                      w-12
-                      rounded-full
-                      overflow-hidden
-                      bg-gray-100
-                    "
-                  >
-                    <svg
-                      class="h-full w-full text-gray-300"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
-                  </span>
-                  <button
-                    type="button"
-                    class="
-                      ml-5
-                      bg-white
                       py-2
                       px-3
                       border border-gray-300
+                      bg-white
                       rounded-md
                       shadow-sm
-                      text-sm
-                      leading-4
-                      font-medium
-                      text-gray-700
-                      hover:bg-gray-50
                       focus:outline-none
-                      focus:ring-2
-                      focus:ring-offset-2
                       focus:ring-indigo-500
+                      focus:border-indigo-500
+                      sm:text-sm
                     "
                   >
-                    Change
-                  </button>
+                    <option>Action</option>
+                    <option>Comedy</option>
+                    <option>Drama</option>
+                    <option>Fantasy</option>
+                    <option>Horror</option>
+                    <option>Mystery</option>
+                    <option>Romance</option>
+                    <option>Thriller</option>
+                  </select>
                 </div>
+
+                <div class="col-span-6">
+                  <label
+                    for="published-year"
+                    class="block text-sm font-medium text-gray-700"
+                    >Published Year</label
+                  >
+                  <input
+                    type="date"
+                    v-model="datas.published_year"
+                    class="
+                      mt-1
+                      focus:ring-indigo-500 focus:border-indigo-500
+                      block
+                      w-full
+                      shadow-sm
+                      sm:text-sm
+                      border-gray-300
+                      rounded-md
+                    "
+                  />
+                </div>
+                <!-- thumbnail here-->
               </div>
 
-              <div>
+              <div class="mt-6">
                 <label class="block text-sm font-medium text-gray-700">
-                  Cover photo
+                  Thumbnail
                 </label>
                 <div
                   class="
@@ -184,10 +371,11 @@
                           focus-within:ring-indigo-500
                         "
                       >
-                        <span>Upload a file</span>
+                        <span>Upload Image</span>
                         <input
                           id="file-upload"
                           name="file-upload"
+                          @change="onFileChange"
                           type="file"
                           class="sr-only"
                         />
@@ -197,265 +385,42 @@
                     <p class="text-xs text-gray-500">
                       PNG, JPG, GIF up to 10MB
                     </p>
+
+                    <p class="text-xs text-gray-500">
+                      {{ datas.image_name }}
+                    </p>
+
+                    <p class="text-xs text-gray-500"></p>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-              <button
-                type="submit"
-                class="
-                  inline-flex
-                  justify-center
-                  py-2
-                  px-4
-                  border border-transparent
-                  shadow-sm
-                  text-sm
-                  font-medium
-                  rounded-md
-                  text-white
-                  bg-indigo-600
-                  hover:bg-indigo-700
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-offset-2
-                  focus:ring-indigo-500
-                "
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div class="hidden sm:block" aria-hidden="true">
-    <div class="py-5">
-      <div class="border-t border-gray-200" />
-    </div>
-  </div>
-
-  <div class="mt-10 sm:mt-0">
-    <div class="md:grid md:grid-cols-3 md:gap-6">
-      <div class="md:col-span-1">
-        <div class="px-4 sm:px-0">
-          <h3 class="text-lg font-medium leading-6 text-gray-900">
-            Personal Information
-          </h3>
-          <p class="mt-1 text-sm text-gray-600">
-            Use a permanent address where you can receive mail.
-          </p>
-        </div>
-      </div>
-      <div class="mt-5 md:mt-0 md:col-span-2">
-        <form action="#" method="POST">
-          <div class="shadow overflow-hidden sm:rounded-md">
-            <div class="px-4 py-5 bg-white sm:p-6">
-              <div class="grid grid-cols-6 gap-6">
-                <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="first-name"
-                    class="block text-sm font-medium text-gray-700"
-                    >First name</label
-                  >
-                  <input
-                    type="text"
-                    name="first-name"
-                    id="first-name"
-                    autocomplete="given-name"
+              <div class="mt-4">
+                <label
+                  for="movie-description"
+                  class="block text-sm font-medium text-gray-700"
+                >
+                  Movie Description
+                </label>
+                <div class="mt-1">
+                  <textarea
+                    v-model="datas.movie_description"
+                    rows="3"
                     class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
                       shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="last-name"
-                    class="block text-sm font-medium text-gray-700"
-                    >Last name</label
-                  >
-                  <input
-                    type="text"
-                    name="last-name"
-                    id="last-name"
-                    autocomplete="family-name"
-                    class="
-                      mt-1
                       focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-4">
-                  <label
-                    for="email-address"
-                    class="block text-sm font-medium text-gray-700"
-                    >Email address</label
-                  >
-                  <input
-                    type="text"
-                    name="email-address"
-                    id="email-address"
-                    autocomplete="email"
-                    class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="country"
-                    class="block text-sm font-medium text-gray-700"
-                    >Country</label
-                  >
-                  <select
-                    id="country"
-                    name="country"
-                    autocomplete="country-name"
-                    class="
                       mt-1
                       block
                       w-full
-                      py-2
-                      px-3
+                      sm:text-sm
                       border border-gray-300
-                      bg-white
-                      rounded-md
-                      shadow-sm
-                      focus:outline-none
-                      focus:ring-indigo-500
-                      focus:border-indigo-500
-                      sm:text-sm
-                    "
-                  >
-                    <option>United States</option>
-                    <option>Canada</option>
-                    <option>Mexico</option>
-                  </select>
-                </div>
-
-                <div class="col-span-6">
-                  <label
-                    for="street-address"
-                    class="block text-sm font-medium text-gray-700"
-                    >Street address</label
-                  >
-                  <input
-                    type="text"
-                    name="street-address"
-                    id="street-address"
-                    autocomplete="street-address"
-                    class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
                       rounded-md
                     "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-6 lg:col-span-2">
-                  <label
-                    for="city"
-                    class="block text-sm font-medium text-gray-700"
-                    >City</label
-                  >
-                  <input
-                    type="text"
-                    name="city"
-                    id="city"
-                    autocomplete="address-level2"
-                    class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-3 lg:col-span-2">
-                  <label
-                    for="region"
-                    class="block text-sm font-medium text-gray-700"
-                    >State / Province</label
-                  >
-                  <input
-                    type="text"
-                    name="region"
-                    id="region"
-                    autocomplete="address-level1"
-                    class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
-                  />
-                </div>
-
-                <div class="col-span-6 sm:col-span-3 lg:col-span-2">
-                  <label
-                    for="postal-code"
-                    class="block text-sm font-medium text-gray-700"
-                    >ZIP / Postal code</label
-                  >
-                  <input
-                    type="text"
-                    name="postal-code"
-                    id="postal-code"
-                    autocomplete="postal-code"
-                    class="
-                      mt-1
-                      focus:ring-indigo-500 focus:border-indigo-500
-                      block
-                      w-full
-                      shadow-sm
-                      sm:text-sm
-                      border-gray-300
-                      rounded-md
-                    "
+                    placeholder="movie description here..."
                   />
                 </div>
               </div>
             </div>
+
             <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
               <button
                 type="submit"
@@ -478,7 +443,7 @@
                   focus:ring-indigo-500
                 "
               >
-                Save
+                Add Movie
               </button>
             </div>
           </div>
@@ -487,212 +452,349 @@
     </div>
   </div>
 
-  <div class="hidden sm:block" aria-hidden="true">
-    <div class="py-5">
-      <div class="border-t border-gray-200" />
-    </div>
-  </div>
+  <div class="col-span-12">
+    <BaseCard>
+      <template v-slot:cardHeader>
+        <div class="card-header">
+          <div class="card-title py-3 mx-4">All movies Added</div>
+        </div>
+      </template>
+      <div
+        class="block w-full overflow-x-auto whitespace-nowrap borderless hover"
+      >
+        <div
+          class="dataTable-wrapper dataTable-loading no-footer fixed-columns"
+        >
+          <div
+            class="
+              dataTable-container
+              block
+              w-full
+              overflow-x-auto
+              whitespace-nowrap
+              borderless
+              hover
+            "
+          >
+            <table class="table-3 dataTable-table max-w-full w-full">
+              <thead>
+                <tr class="">
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Movie Id
+                  </th>
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Movie Name
+                  </th>
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Thumbnail
+                  </th>
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Status
+                  </th>
 
-  <div class="mt-10 sm:mt-0">
-    <div class="md:grid md:grid-cols-3 md:gap-6">
-      <div class="md:col-span-1">
-        <div class="px-4 sm:px-0">
-          <h3 class="text-lg font-medium leading-6 text-gray-900">
-            Notifications
-          </h3>
-          <p class="mt-1 text-sm text-gray-600">
-            Decide which communications you'd like to receive and how.
-          </p>
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Published-year
+                  </th>
+                  <th
+                    class="
+                      text-left
+                      border-b
+                      pb-3
+                      mb-3
+                      text-gray-500
+                      font-semibold
+                    "
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  class="hover:bg-gray-100 cursor-pointer"
+                  v-for="movie in movies"
+                  :key="movie.id"
+                >
+                  <td class="text-xs py-5 px-4">
+                    {{ movie.id }}
+                  </td>
+
+                  <td class="text-xs">{{ movie.movie_name }}</td>
+                  <td class="py-5">
+                    <div class="flex">
+                      <img
+                        class="w-9 h-9 rounded-full mr-2"
+                        :src="movie.movie_thumbnail"
+                        alt=""
+                      />
+                    </div>
+                  </td>
+                  <td class="py-5">
+                    <span
+                      class="
+                        px-3
+                        py-1
+                        rounded-full
+                        text-primary
+                        bg-yellow-700
+                        text-white
+                        border border-primary
+                        mr-3
+                        text-xs
+                      "
+                      v-if="movie.is_published"
+                      >Scheduled</span
+                    >
+                    <span
+                      class="
+                        px-3
+                        py-1
+                        rounded-full
+                        text-primary
+                        bg-yellow-700
+                        text-white
+                        border border-primary
+                        mr-3
+                        text-xs
+                      "
+                      v-else
+                      >Pending</span
+                    >
+                  </td>
+
+                  <td class="py-5">{{ movie.published_year }}</td>
+                  <td class="py-5">
+                    <Dialogue
+                      :thumbnail="movie.movie_thumbnail"
+                      :name="movie.movie_name"
+                    >
+                      <template v-slot:DialogueButton>
+                        <BaseBtn
+                          rounded
+                          class="
+                            border border-primary
+                            text-white
+                            bg-green-700
+                            hover:bg-primary hover:text-white
+                          "
+                          v-if="!movie.is_published"
+                        >
+                          Schedule Now
+                        </BaseBtn>
+                      </template>
+
+                      <template v-slot:Main>
+                        <div class="mt-5 md:mt-0 md:col-span-2">
+                          <form @submit.prevent="movieSchedule">
+                            <div class="shadow overflow-hidden sm:rounded-md">
+                              <div class="px-4 py-5 bg-white sm:p-6">
+                                <div class="grid grid-cols-6 gap-6">
+                                  <div class="col-span-6 sm:col-span-4">
+                                    <label
+                                      for="movie-name"
+                                      class="
+                                        block
+                                        text-sm
+                                        font-medium
+                                        text-gray-700
+                                      "
+                                      >Set Price</label
+                                    >
+                                    <input
+                                      type="number"
+                                      v-model="scheduleData.setPrice"
+                                      class="
+                                        mt-1
+                                        focus:ring-indigo-500
+                                        focus:border-indigo-500
+                                        block
+                                        w-full
+                                        shadow-sm
+                                        sm:text-sm
+                                        border-gray-300
+                                        rounded-md
+                                      "
+                                    />
+
+                                    {{ scheduleData.setPrice }}
+                                  </div>
+
+                                  <div class="col-span-6">
+                                    <div class="flex items-center">
+                                      <label
+                                        for="published-year"
+                                        class="
+                                          block
+                                          text-sm
+                                          font-medium
+                                          text-gray-700
+                                        "
+                                        >Set Schedule Date</label
+                                      >
+                                      <BaseBtn @click="handleAdd">
+                                        <span
+                                          class="
+                                            bg-gray-200
+                                            shadow-sm
+                                            p-1
+                                            rounded-md
+                                            inline-flex
+                                            text-lg
+                                            items-center
+                                          "
+                                        >
+                                          <PlusIcon
+                                            class="h-5 w-5 text-green-700 ml-1"
+                                          />
+                                        </span>
+                                      </BaseBtn>
+                                    </div>
+                                    <div
+                                      class="flex"
+                                      v-for="(item, index) in scheduleData"
+                                      :key="index"
+                                    >
+                                      <input
+                                        type="date"
+                                        v-model="item.scheduleData"
+                                        class="
+                                          mt-3
+                                          focus:ring-indigo-500
+                                          focus:border-indigo-500
+                                          block
+                                          w-full
+                                          shadow-sm
+                                          sm:text-sm
+                                          border-gray-300
+                                          rounded-md
+                                        "
+                                      />
+
+                                      <button @click="handleRemove">
+                                        <XIcon
+                                          class="h-5 w-5 text-red-700 ml-1"
+                                        />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div
+                                class="px-4 py-3 bg-gray-50 text-right sm:px-6"
+                              >
+                                <button
+                                  type="submit"
+                                  class="
+                                    inline-flex
+                                    justify-center
+                                    py-2
+                                    px-4
+                                    border border-transparent
+                                    shadow-sm
+                                    text-sm
+                                    font-medium
+                                    rounded-md
+                                    text-white
+                                    bg-indigo-600
+                                    hover:bg-indigo-700
+                                    focus:outline-none
+                                    focus:ring-2
+                                    focus:ring-offset-2
+                                    focus:ring-indigo-500
+                                  "
+                                >
+                                  Schedule Now
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </template>
+                    </Dialogue>
+
+                    <BaseBtn
+                      rounded
+                      class="
+                        border border-primary
+                        text-white
+                        bg-blue-900
+                        hover:bg-primary hover:text-white
+                      "
+                    >
+                      Update
+                    </BaseBtn>
+
+                    <BaseBtn
+                      @click="deleteAndUpdateMovie(movie.id)"
+                      rounded
+                      class="
+                        border border-primary
+                        text-white
+                        bg-pink-700
+                        hover:bg-primary hover:text-white
+                      "
+                    >
+                      Delete
+                    </BaseBtn>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="dataTable-bottom">
+            <div class="dataTable-info">Showing 1 to 8 of 8 entries</div>
+            <nav class="dataTable-pagination">
+              <ul class="dataTable-pagination-list"></ul>
+            </nav>
+          </div>
         </div>
       </div>
-      <div class="mt-5 md:mt-0 md:col-span-2">
-        <form action="#" method="POST">
-          <div class="shadow overflow-hidden sm:rounded-md">
-            <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-              <fieldset>
-                <legend class="text-base font-medium text-gray-900">
-                  By Email
-                </legend>
-                <div class="mt-4 space-y-4">
-                  <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                      <input
-                        id="comments"
-                        name="comments"
-                        type="checkbox"
-                        class="
-                          focus:ring-indigo-500
-                          h-4
-                          w-4
-                          text-indigo-600
-                          border-gray-300
-                          rounded
-                        "
-                      />
-                    </div>
-                    <div class="ml-3 text-sm">
-                      <label for="comments" class="font-medium text-gray-700"
-                        >Comments</label
-                      >
-                      <p class="text-gray-500">
-                        Get notified when someones posts a comment on a posting.
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                      <input
-                        id="candidates"
-                        name="candidates"
-                        type="checkbox"
-                        class="
-                          focus:ring-indigo-500
-                          h-4
-                          w-4
-                          text-indigo-600
-                          border-gray-300
-                          rounded
-                        "
-                      />
-                    </div>
-                    <div class="ml-3 text-sm">
-                      <label for="candidates" class="font-medium text-gray-700"
-                        >Candidates</label
-                      >
-                      <p class="text-gray-500">
-                        Get notified when a candidate applies for a job.
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                      <input
-                        id="offers"
-                        name="offers"
-                        type="checkbox"
-                        class="
-                          focus:ring-indigo-500
-                          h-4
-                          w-4
-                          text-indigo-600
-                          border-gray-300
-                          rounded
-                        "
-                      />
-                    </div>
-                    <div class="ml-3 text-sm">
-                      <label for="offers" class="font-medium text-gray-700"
-                        >Offers</label
-                      >
-                      <p class="text-gray-500">
-                        Get notified when a candidate accepts or rejects an
-                        offer.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </fieldset>
-              <fieldset>
-                <div>
-                  <legend class="text-base font-medium text-gray-900">
-                    Push Notifications
-                  </legend>
-                  <p class="text-sm text-gray-500">
-                    These are delivered via SMS to your mobile phone.
-                  </p>
-                </div>
-                <div class="mt-4 space-y-4">
-                  <div class="flex items-center">
-                    <input
-                      id="push-everything"
-                      name="push-notifications"
-                      type="radio"
-                      class="
-                        focus:ring-indigo-500
-                        h-4
-                        w-4
-                        text-indigo-600
-                        border-gray-300
-                      "
-                    />
-                    <label
-                      for="push-everything"
-                      class="ml-3 block text-sm font-medium text-gray-700"
-                    >
-                      Everything
-                    </label>
-                  </div>
-                  <div class="flex items-center">
-                    <input
-                      id="push-email"
-                      name="push-notifications"
-                      type="radio"
-                      class="
-                        focus:ring-indigo-500
-                        h-4
-                        w-4
-                        text-indigo-600
-                        border-gray-300
-                      "
-                    />
-                    <label
-                      for="push-email"
-                      class="ml-3 block text-sm font-medium text-gray-700"
-                    >
-                      Same as email
-                    </label>
-                  </div>
-                  <div class="flex items-center">
-                    <input
-                      id="push-nothing"
-                      name="push-notifications"
-                      type="radio"
-                      class="
-                        focus:ring-indigo-500
-                        h-4
-                        w-4
-                        text-indigo-600
-                        border-gray-300
-                      "
-                    />
-                    <label
-                      for="push-nothing"
-                      class="ml-3 block text-sm font-medium text-gray-700"
-                    >
-                      No push notifications
-                    </label>
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-            <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-              <button
-                type="submit"
-                class="
-                  inline-flex
-                  justify-center
-                  py-2
-                  px-4
-                  border border-transparent
-                  shadow-sm
-                  text-sm
-                  font-medium
-                  rounded-md
-                  text-white
-                  bg-indigo-600
-                  hover:bg-indigo-700
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-offset-2
-                  focus:ring-indigo-500
-                "
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+    </BaseCard>
   </div>
 </template>

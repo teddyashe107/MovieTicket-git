@@ -35,8 +35,9 @@ export const useAuth0 = (state) => {
 		await state.auth0.loginWithPopup();
 		await handleStateChange();
 		window.localStorage.setItem('idToken', state.idToken.__raw);
-		window.localStorage.setItem('user', state.user);
-		const myToken = jwt_decode(window.localStorage.getItem('idToken'));
+		const userData = JSON.stringify(state.user);
+		window.localStorage.setItem('user', userData);
+		//console.log(window.localStorage.getItem('user'));
 		console.log(window.localStorage.getItem('idToken'));
 	};
 
@@ -44,30 +45,12 @@ export const useAuth0 = (state) => {
 		state.auth0.logout({
 			returnTo: window.location.origin,
 		});
-	};
-
-	const getToken = () => {
-		const myToken = jwt_decode(window.localStorage.getItem('idToken'));
-
-		return myToken.sub;
-	};
-
-	const getUser = () => {
-		const myUser = jwt_decode(window.localStorage.getItem('idToken'));
-
-		return myUser;
-	};
-
-	const isAuthenticated = () => {
-		return state.isAuthenticated;
+		window.localStorage.removeItem('idToken');
 	};
 
 	return {
 		login,
 		logout,
 		initAuth,
-		getToken,
-		isAuthenticated,
-		getUser,
 	};
 };

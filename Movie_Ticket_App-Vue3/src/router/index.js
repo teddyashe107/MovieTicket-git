@@ -12,8 +12,11 @@ import SearchExample from '../views/SearchExample.vue';
 import Example from '../views/Example.vue';
 import Dashboard from '../views/admin/Dashboard.vue';
 import Sidebar from '../layouts/admin/layouts/Sidebar.vue';
+import ThankYou from '../views/ThankYou.vue';
 
-//import { routeGuard } from '../auth'
+import { authGuard } from '../auth/authGuard';
+
+const user = window.localStorage.getItem('user');
 
 const routes = [
 	{
@@ -30,8 +33,14 @@ const routes = [
 				component: Home,
 			},
 			{
-				path: 'movie/:name',
-				name: 'MovieDetails',
+				path: 'thank-you',
+				name: 'ThankYou',
+				component: ThankYou,
+			},
+
+			{
+				path: 'movie-details/:id',
+				name: 'ViewMovie',
 				component: MovieDetails,
 				props: true,
 				children: [
@@ -46,11 +55,11 @@ const routes = [
 
 	{
 		path: '/test',
+		name: 'Test',
 		component: Test,
-		meta: {
-			title: 'Home',
-		},
+		props: true,
 	},
+
 	{
 		path: '/searchexample',
 		component: SearchExample,
@@ -73,6 +82,7 @@ const routes = [
 		name: 'Admin',
 		component: () => import('../layouts/admin/index.vue'),
 		redirect: '/admin/dashboard',
+		beforeEnter: authGuard,
 		children: [
 			{
 				path: 'dashboard',

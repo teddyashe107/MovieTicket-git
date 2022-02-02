@@ -1,5 +1,8 @@
 <script setup>
 import {ref} from'vue'
+
+import { useAuth0, AuthState } from "../auth/index";
+const { login, logout, initAuth} = useAuth0(AuthState);
 import {
   Dialog,
   DialogOverlay,
@@ -43,14 +46,20 @@ const product = {
 
 const open = ref(false)
     function openModal () {
-      open.value = true
+        if(AuthState.isAuthenticated){
+            open.value = true
+        }
+   
+      
     }
   
     const selectedColor = ref(product.colors[0])
     const selectedSize = ref(product.sizes[2])
+
+    initAuth();
 </script>
 
-<template >
+<template>
   <button type="button" @click="openModal">
     <slot name="DialogueButton"> </slot>
   </button>
@@ -164,7 +173,7 @@ const open = ref(false)
                     bg-gray-100
                     overflow-hidden
                     sm:col-span-4
-                    lg:col-span-5
+                    lg:col-span-4
                   "
                 >
                   <img
@@ -173,7 +182,7 @@ const open = ref(false)
                     class="object-center object-cover"
                   />
                 </div>
-                <div class="sm:col-span-8 lg:col-span-7">
+                <div class="sm:col-span-8 lg:col-span-8">
                   <h2 class="text-2xl font-extrabold text-gray-900 sm:pr-12">
                     {{ props.name }}
                   </h2>
@@ -188,5 +197,4 @@ const open = ref(false)
     </Dialog>
   </TransitionRoot>
 </template>
-
 

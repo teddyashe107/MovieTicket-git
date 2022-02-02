@@ -1,20 +1,42 @@
 <script setup>
-import { reactive } from 'vue';
+import {ref, reactive, computed, onMounted } from 'vue';
 import {XIcon} from '@heroicons/vue/outline'
 import {PlusIcon} from '@heroicons/vue/outline'
 import { gql } from 'graphql-tag';
 //import {  useMutation } from '@vue/apollo-composable'
-import {  useQuery, useResult } from '@vue/apollo-composable'
+import {  useMutation, useQuery, useResult } from '@vue/apollo-composable'
 
-const scheduleData = reactive ([
-   {setPrice: ''},
-   {scheduleDate: ''}
-])
+
 
 const scheduleNow = () => {
 
   console.log(scheduleData)
 }
+
+const getMovies = gql`
+query getScheduledMovies {
+  schedule_movies {
+    id
+    price
+    movie {
+      movie_name
+      movie_thumbnail
+    }
+    schedule_dates {
+      schedule_date
+    }
+  }
+}
+
+`
+const {result, error} = useQuery(getMovies)
+const movies = useResult(result, null, (data) => data.schedule_movies)
+
+const scheduleData = reactive ([
+   {setPrice: ''},
+ 
+])
+
 // handle add button 
 const handleAdd = () => {
   scheduleData.push({scheduleDate: ''})
@@ -22,21 +44,50 @@ const handleAdd = () => {
 const handleRemove = () => {
   scheduleData.pop()
 }
-const getMovies = gql`
-query getMovies {
-  movies {
-    id
-    movie_name
-    movie_type
-    movie_thumbnail
-    is_published
-    published_year
-  }
-}
 
-`
-const {result, error} = useQuery(getMovies)
-const movies = useResult(result, null, (data) => data.movies)
+
+// onMounted(() => {
+//   scheduleData.setPrice = 100
+// })
+
+
+
+
+//const movieDetail = ref([])
+const updateMovie = (id) => {
+  // write a computed function to return movie by its id
+  const data = computed(() => movies.value.filter(movie => movie.id == id))
+  scheduleData.setPrice = data.value[0].price
+ 
+}
+// 
+// const delete_scheduled_movie = gql`
+// mutation delete_scheduled_movie($id: Int!) {
+//   delete_schedule_movies_by_pk(id: $id) {
+//     id
+//   }
+// }
+// `
+// const {mutate: deleteScheduledMovie} = useMutation(delete_scheduled_movie)
+// 
+// function delete_ScheduledMovie(id) {
+//    deleteScheduledMovie({id: id}, {
+//      update: (store, {}) => {
+//        const data = store.readQuery({query: getMovies})
+//        const updatedData = data.schedule_movies.filter(movie => movie.id !== id)
+//        store.writeQuery({
+//          query: getMovies,
+//          data: {
+//            movies: updatedData
+//          }
+//        })
+// 
+//        return updatedData
+//      }
+//     })
+// }
+
+
 
 </script>
 
@@ -165,12 +216,12 @@ const movies = useResult(result, null, (data) => data.movies)
                     {{ movie.id }}
                   </td>
 
-                  <td class="text-xs">{{ movie.movie_name }}</td>
+                  <td class="text-xs">{{ movie.movie.movie_name }}</td>
                   <td class="py-5">
                     <div class="flex">
                       <img
                         class="w-9 h-9 rounded-full mr-2"
-                        :src="movie.movie_thumbnail"
+                        :src="movie.movie.movie_thumbnail"
                         alt=""
                       />
                     </div>
@@ -191,15 +242,25 @@ const movies = useResult(result, null, (data) => data.movies)
                       >Scheduled</span
                     >
                   </td>
-                  <td class="py-5">{{ 3.34 * index + 1 }}%</td>
-                  <td class="py-5">12-02-20</td>
+                  <td class="py-5">{{ movie.price }}</td>
+                  <td class="py-5">
+                    <ul>
+                      <li
+                        v-for="(item, index) in movie.schedule_dates"
+                        :key="index"
+                      >
+                        {{ item.schedule_date }}
+                      </li>
+                    </ul>
+                  </td>
                   <td class="py-5">
                     <Dialogue
-                      :thumbnail="movie.movie_thumbnail"
-                      :name="movie.movie_name"
+                      :thumbnail="movie.movie.movie_thumbnail"
+                      :name="movie.movie.movie_name"
                     >
                       <template v-slot:DialogueButton>
                         <BaseBtn
+                          @click="updateMovie(movie.id)"
                           rounded
                           class="
                             border border-primary
@@ -213,8 +274,9 @@ const movies = useResult(result, null, (data) => data.movies)
                       </template>
 
                       <template v-slot:Main>
+                        {{ scheduleData.scheduleDate }}
                         <div class="mt-5 md:mt-0 md:col-span-2">
-                          <form @submit.prevent="scheduleNow">
+                          <form @submit.prevent="updateNow">
                             <div class="shadow overflow-hidden sm:rounded-md">
                               <div class="px-4 py-5 bg-white sm:p-6">
                                 <div class="grid grid-cols-6 gap-6">
@@ -227,7 +289,7 @@ const movies = useResult(result, null, (data) => data.movies)
                                         font-medium
                                         text-gray-700
                                       "
-                                      >Set Price</label
+                                      >Update Price</label
                                     >
                                     <input
                                       type="number"
@@ -244,8 +306,6 @@ const movies = useResult(result, null, (data) => data.movies)
                                         rounded-md
                                       "
                                     />
-
-                                    {{ scheduleData.setPrice }}
                                   </div>
 
                                   <div class="col-span-6">
@@ -284,7 +344,7 @@ const movies = useResult(result, null, (data) => data.movies)
                                       :key="index"
                                     >
                                       <input
-                                        type="date"
+                                        type="datetime-local"
                                         v-model="item.scheduleData"
                                         class="
                                           mt-3
@@ -333,7 +393,7 @@ const movies = useResult(result, null, (data) => data.movies)
                                     focus:ring-indigo-500
                                   "
                                 >
-                                  Schedule Now
+                                  Update
                                 </button>
                               </div>
                             </div>
@@ -341,17 +401,6 @@ const movies = useResult(result, null, (data) => data.movies)
                         </div>
                       </template>
                     </Dialogue>
-                    <BaseBtn
-                      rounded
-                      class="
-                        border border-primary
-                        text-white
-                        bg-pink-900
-                        hover:bg-primary hover:text-white
-                      "
-                    >
-                      Delete
-                    </BaseBtn>
                   </td>
                 </tr>
               </tbody>

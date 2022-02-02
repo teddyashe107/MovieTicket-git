@@ -1,13 +1,16 @@
-const express = require('express');
+//const express = require('express');
+import express from 'express';
 
+//const fetch = require('node-fetch');
+import fetch from 'node-fetch';
+import bodyParser from 'body-parser';
+//const bodyParser = require('body-parser');
+//const fs = require('fs');
+import fs from 'fs';
+import { async } from '@firebase/util';
+
+import 'dotenv/config';
 const app = express();
-
-const fetch = require('node-fetch');
-
-const bodyParser = require('body-parser');
-const fs = require('fs');
-const { response } = require('express');
-
 app.use(express.static('public'));
 
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -18,17 +21,23 @@ app.use(
 	})
 );
 
+// update the columen isPublished when the movie is scheduled (this function is trigger by hasura update event)
 const updateMovie = async (req, res, next) => {
-	const { movie_id } = req.body.event.data.new;
+	// get the event input
+	const movie_id = req.body.event.data.new.movie_id;
+	//const autho = req.body.event.session_variables
+	//	console.log(req.body);
+	///	console.log(req.body.event.session_variables);
+	//perform update mutation on the movies table
 	try {
-		// excute update mutation to movies table
+		//  update mutation to movies table
 		const HASURA_MUTATION = `
-		mutation updateMovie($id: Int!) {
-			update_movies_by_pk(pk_columns: {id: $id}, _set: {is_published: "true"}) {
-			  id
-			}
-		  }
-		  `;
+			mutation updateMovie($id: Int!) {
+				update_movies_by_pk(pk_columns: {id: $id}, _set: {is_published: "true"}) {
+				  id
+				}
+			  }
+			  `;
 		const variables = {
 			id: movie_id,
 		};
@@ -40,8 +49,6 @@ const updateMovie = async (req, res, next) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization:
-						'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRjRTN6OGhodUFQQmVIUGdocUl1QSJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiYXV0aDB8NjFhYTYxNTljZmIwMDUwMDcyYmIxM2I4In0sIm5pY2tuYW1lIjoiYm9zcyIsIm5hbWUiOiJib3NzQGdtYWlsLmNvbSIsInBpY3R1cmUiOiJodHRwczovL3MuZ3JhdmF0YXIuY29tL2F2YXRhci8yOTRiZDNmZjk3OGRkNDJmOTcwNWZkZGQzNzY0NWI0Yz9zPTQ4MCZyPXBnJmQ9aHR0cHMlM0ElMkYlMkZjZG4uYXV0aDAuY29tJTJGYXZhdGFycyUyRmJvLnBuZyIsInVwZGF0ZWRfYXQiOiIyMDIxLTEyLTEzVDEyOjE4OjAzLjEwOFoiLCJlbWFpbCI6ImJvc3NAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJpc3MiOiJodHRwczovL2Rldi03OGR6ZnRoZy51cy5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjFhYTYxNTljZmIwMDUwMDcyYmIxM2I4IiwiYXVkIjoiWmdPd2VjRjBmR2xEUnZBVTR6Q1dveVRuR1BrRUxRUUgiLCJpYXQiOjE2MzkzOTc4ODYsImV4cCI6MTYzOTQzMzg4Niwibm9uY2UiOiJkSFJWVTFkVWRVWXpOamRMUkMxMVZuVTFZaloyYmtkMmIwNWxZbWRvV21SVmVuRmpNakZSY25wcVZBPT0ifQ.EbfwWqEvexz7kfhCJl0WR3nVueU5AFxEQ0W55zl9S9ILy7caRtmLGvtOicjMCesj67Vx5Wdxa9-MaL7_F6V4CT0DJE_FohrBlc76lptIntahbnQrNkO3GfxIrr5k_8A4Trfs-TRdWE_cJsq-2GuUvbkSHSbklNJvxmk3wfVPt-wm_LX1aakvwisBqu3zxIAB072-GrerEm5xGYC6nosUfUOeaVgDpSdPtgsTGJHJtVPPNIWWCK5QOgp4cCFZToZgZ5lSBmMKLw_UUR-rdNKma2PmOobBb47eE83KWXzR-F_Qw6PzvD6KFInztRVYVwZu4qwkFk_eCTY6LuT9wecQww',
 				},
 				body: JSON.stringify({
 					query: HASURA_MUTATION,
@@ -50,8 +57,8 @@ const updateMovie = async (req, res, next) => {
 			}
 		);
 
-		const { data, errors } = await fetchResponse.json();
-		console.log(data);
+		const res = await fetchResponse.json();
+		console.log(res);
 
 		// if Hasura operation errors, then throw error
 		if (errors) {
@@ -66,8 +73,11 @@ const updateMovie = async (req, res, next) => {
 		console.error(e);
 	}
 };
-//
+
+// add new movie to the movies table
 const addMovie = async (req, res, next) => {
+	//console.log(req.headers.authorization);
+	const reqHeader = req.headers.authorization;
 	const {
 		actor_name,
 		director_name,
@@ -91,21 +101,21 @@ const addMovie = async (req, res, next) => {
 
 		// insert into db
 		const HASURA_MUTATION = `
-		mutation addMovie($actor_name: String!, $director_name: String!, $rating: Int!, $movie_name: String!, $movie_description: String!, $movie_thumbnail: String!, $movie_type: String!, $published_year: date!) {
-			insert_movies_one(
-			  object: {
-				actor_name: $actor_name,
-				director_name: $director_name,
-				rating: $rating,
-				movie_name:$movie_name,
-				movie_description: $movie_description,
-				movie_thumbnail: $movie_thumbnail,
-				movie_type: $movie_type,
-				published_year: $published_year}) {
-			  id
-			}
-		  }
-		  `;
+			mutation addMovie($actor_name: String!, $director_name: String!, $rating: Int!, $movie_name: String!, $movie_description: String!, $movie_thumbnail: String!, $movie_type: String!, $published_year: date!) {
+				insert_movies_one(
+				  object: {
+					actor_name: $actor_name,
+					director_name: $director_name,
+					rating: $rating,
+					movie_name:$movie_name,
+					movie_description: $movie_description,
+					movie_thumbnail: $movie_thumbnail,
+					movie_type: $movie_type,
+					published_year: $published_year}) {
+				  id
+				}
+			  }
+			  `;
 		const variables = {
 			actor_name: actor_name,
 			director_name: director_name,
@@ -124,8 +134,7 @@ const addMovie = async (req, res, next) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization:
-						'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRjRTN6OGhodUFQQmVIUGdocUl1QSJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYWRtaW4iXSwieC1oYXN1cmEtZGVmYXVsdC1yb2xlIjoiYWRtaW4iLCJ4LWhhc3VyYS11c2VyLWlkIjoiYXV0aDB8NjFhYTYxNTljZmIwMDUwMDcyYmIxM2I4In0sIm5pY2tuYW1lIjoiYm9zcyIsIm5hbWUiOiJib3NzQGdtYWlsLmNvbSIsInBpY3R1cmUiOiJodHRwczovL3MuZ3JhdmF0YXIuY29tL2F2YXRhci8yOTRiZDNmZjk3OGRkNDJmOTcwNWZkZGQzNzY0NWI0Yz9zPTQ4MCZyPXBnJmQ9aHR0cHMlM0ElMkYlMkZjZG4uYXV0aDAuY29tJTJGYXZhdGFycyUyRmJvLnBuZyIsInVwZGF0ZWRfYXQiOiIyMDIxLTEyLTEzVDEyOjE4OjAzLjEwOFoiLCJlbWFpbCI6ImJvc3NAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJpc3MiOiJodHRwczovL2Rldi03OGR6ZnRoZy51cy5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjFhYTYxNTljZmIwMDUwMDcyYmIxM2I4IiwiYXVkIjoiWmdPd2VjRjBmR2xEUnZBVTR6Q1dveVRuR1BrRUxRUUgiLCJpYXQiOjE2MzkzOTc4ODYsImV4cCI6MTYzOTQzMzg4Niwibm9uY2UiOiJkSFJWVTFkVWRVWXpOamRMUkMxMVZuVTFZaloyYmtkMmIwNWxZbWRvV21SVmVuRmpNakZSY25wcVZBPT0ifQ.EbfwWqEvexz7kfhCJl0WR3nVueU5AFxEQ0W55zl9S9ILy7caRtmLGvtOicjMCesj67Vx5Wdxa9-MaL7_F6V4CT0DJE_FohrBlc76lptIntahbnQrNkO3GfxIrr5k_8A4Trfs-TRdWE_cJsq-2GuUvbkSHSbklNJvxmk3wfVPt-wm_LX1aakvwisBqu3zxIAB072-GrerEm5xGYC6nosUfUOeaVgDpSdPtgsTGJHJtVPPNIWWCK5QOgp4cCFZToZgZ5lSBmMKLw_UUR-rdNKma2PmOobBb47eE83KWXzR-F_Qw6PzvD6KFInztRVYVwZu4qwkFk_eCTY6LuT9wecQww',
+					Authorization: 'Bearer' + ' ' + reqHeader,
 				},
 				body: JSON.stringify({
 					query: HASURA_MUTATION,
@@ -134,15 +143,19 @@ const addMovie = async (req, res, next) => {
 			}
 		);
 
-		const { data, errors } = await fetchResponse.json();
-		console.log(data);
-
-		// if Hasura operation errors, then throw error
-		if (errors) {
-			return res.status(400).json({
-				message: errors,
-			});
-		}
+		const response = await fetchResponse.json();
+		console.log(response);
+		// if (data) {
+		// 	console.log(data);
+		// }
+		// 		console.log(data);
+		//
+		// 		// if Hasura operation errors, then throw error
+		// 		if (errors) {
+		// 			return res.status(400).json({
+		// 				message: errors,
+		// 			});
+		// 		}
 
 		// success
 		return res.json({ msg: 'success' });
@@ -150,6 +163,7 @@ const addMovie = async (req, res, next) => {
 		console.error(e);
 	}
 };
+
 //
 // app.post('/insertmovie', fileUpload);
 // app.post('/addMovie', addMovie);
@@ -177,14 +191,125 @@ app.use(function (req, res, next) {
 	next();
 });
 
-const insertMovie = async (req, res) => {
-	console.log(req.body);
-};
+// get firebase cloud messaging token
+// let token = '';
+// const fcmToken = async (req, res) => {
+// 	const data = await req.body.fcmTokens;
+// 	token = data;
+// 	if (data) {
+// 	} else {
+// 		console.log('something went wrong');
+// 	}
+// 	res.send('success');
+// };
+
+// get hasura event data and send notification
+//
+async function sendNotification(req, res) {
+	//	console.log(req.body.event.data.new);
+	const GET_MOVIE = `
+	query getMovie($id: Int!) {
+		movies_by_pk(id: $id) {
+			movie_name
+			movie_thumbnail
+			movie_description
+		}
+	  }
+	  
+	  `;
+
+	const variables = {
+		id: req.body.event.data.new.movie_id,
+	};
+
+	const HASURA_QUERY = `
+		query getToken {
+			fcm_token {
+			  fcm_token
+			}
+		  }
+		  `;
+	// execute query in Hasura
+	const response = await fetch(
+		'https://movie-ticket.hasura.app/v1/graphql',
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				query: HASURA_QUERY,
+			}),
+		}
+	);
+
+	const { data, errors } = await response.json();
+
+	let token = [];
+	if (data) {
+		data.fcm_token.forEach((value) => token.push(value.fcm_token));
+	} else console.log(errors);
+
+	// execute query in Hasura
+	const response2 = await fetch(
+		'https://movie-ticket.hasura.app/v1/graphql',
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				query: GET_MOVIE,
+				variables,
+			}),
+		}
+	);
+
+	const va = await response2.json();
+	console.log(va.data.movies_by_pk.movie_name);
+
+	// send notification
+	const registration_ids = token;
+	const title = 'New Movie Published' + va.data.movies_by_pk.movie_name;
+	const paylod = va.data.movies_by_pk.movie_description;
+	const body = {
+		registration_ids: registration_ids,
+		notification: {
+			title: title,
+			body: paylod,
+			icon: va.data.movies_by_pk.movie_thumbnail,
+			click_action: 'http://localhost:3000/',
+		},
+	};
+	const options = {
+		method: 'POST',
+		headers: {
+			Authorization: 'key=' + process.env.SERVER_KEY,
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(body),
+	};
+
+	fetch('https://fcm.googleapis.com/fcm/send', options)
+		.then((response) => {})
+		.catch((error) => {
+			console.log(error);
+		});
+
+	res.send('success');
+}
+
+// upload new movie to movies table
 app.post('/api/upload', addMovie);
-app.post('/api/test', (req, res) => {
-	// console log req body
-	console.log(req.body);
-});
+// app.post('/api/test', (req, res) => {
+// 	// console log req body
+// 	console.log(req.body);
+// });
+
+// update ispublished table of movies when an event is triggered
 app.post('/updateMovie', updateMovie);
 
+// get firebase cloud messaging token
+//app.post('/getNotification', fcmToken);
+app.post('/sendNotification', sendNotification);
 app.listen(process.env.PORT || 8000);

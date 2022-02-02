@@ -1,9 +1,28 @@
-<!-- This example requires Tailwind CSS v2.0+ -->
+<script setup>
+import {useStore} from 'vuex'
+const store = useStore()
+
+
+function setSearchValue(){
+    store.commit('home/setSearchValue')
+}
+</script>
+
 <template>
-  <div class="relative bg-gray-900 overflow-hidden pt-4">
+  <div class="relative bg-gray-900 overflow-hidden pt-32">
     <div class="pt-16 pb-80 sm:pt-24 sm:pb-40 lg:pt-40 lg:pb-48">
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:static">
-        <div class="sm:max-w-lg">
+      <div
+        class="
+          relative
+          container
+          mx-auto
+          px-4
+          sm:flex sm:flex-col
+          lg:px-8
+          sm:static
+        "
+      >
+        <div class="sm:max-w-lg sm:flex sm:flex-col">
           <h1
             class="
               text-4xl
@@ -13,7 +32,7 @@
               from-purple-900
               to-pink-300
               bg-clip-text
-              text-transparent text-xs
+              text-transparent
               sm:text-6xl
             "
           >
@@ -31,7 +50,7 @@
               aria-hidden="true"
               class="
                 pointer-events-none
-                lg:absolute lg:inset-y-0 lg:max-w-7xl lg:mx-auto lg:w-full
+                lg:absolute lg:max-w-7xl lg:mx-auto lg:w-full
               "
             >
               <div
@@ -62,7 +81,16 @@
                         class="w-full h-full object-center object-cover"
                       />
                     </div>
-                    <div class="w-44 h-64 rounded-lg overflow-hidden">
+                    <div
+                      class="
+                        w-44
+                        h-64
+                        rounded-lg
+                        overflow-hidden
+                        sm:opacity-0
+                        lg:opacity-100
+                      "
+                    >
                       <img
                         src="/images/321257,xcitefun-hummingbird-movie-poster-3.jpg"
                         alt=""
@@ -73,21 +101,48 @@
                   <div
                     class="flex-shrink-0 grid grid-cols-1 gap-y-6 lg:gap-y-8"
                   >
-                    <div class="w-44 h-64 rounded-lg overflow-hidden">
+                    <div
+                      class="
+                        w-44
+                        h-64
+                        rounded-lg
+                        overflow-hidden
+                        sm:opacity-0
+                        lg:opacity-100
+                      "
+                    >
                       <img
                         src="/images/VFW.jpg"
                         alt=""
                         class="w-full h-full object-center object-cover"
                       />
                     </div>
-                    <div class="w-44 h-64 rounded-lg overflow-hidden">
+                    <div
+                      class="
+                        w-44
+                        h-64
+                        rounded-lg
+                        overflow-hidden
+                        sm:opacity-0
+                        lg:opacity-100
+                      "
+                    >
                       <img
                         src="/images/Poster-tangled-4.jpg"
                         alt=""
                         class="w-full h-full object-center object-cover"
                       />
                     </div>
-                    <div class="w-44 h-64 rounded-lg overflow-hidden">
+                    <div
+                      class="
+                        w-44
+                        h-64
+                        rounded-lg
+                        overflow-hidden
+                        sm:opacity-0
+                        lg:opacity-100
+                      "
+                    >
                       <img
                         src="/images/Avatar.jpg"
                         alt=""
@@ -107,7 +162,7 @@
                     </div>
                     <div class="w-44 h-64 rounded-lg overflow-hidden">
                       <img
-                        src="/images/teda.jpg"
+                        src="/images/james-bond-no-time-to-die-i86328.jpg"
                         alt=""
                         class="w-full h-full object-center object-cover"
                       />
@@ -117,8 +172,8 @@
               </div>
             </div>
 
-            <a
-              href="#"
+            <button
+              @click="setSearchValue"
               class="
                 inline-block
                 text-center
@@ -131,8 +186,9 @@
                 text-white
                 hover:bg-indigo-700
               "
-              >Book Now</a
             >
+              Book Now
+            </button>
           </div>
         </div>
       </div>
