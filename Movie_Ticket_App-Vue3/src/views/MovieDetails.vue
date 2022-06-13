@@ -12,6 +12,8 @@ import { ClockIcon } from "@heroicons/vue/outline";
 import { PlusIcon } from "@heroicons/vue/outline";
 import { useStore } from "vuex";
 import Swal from "sweetalert2";
+import {Form, Field, ErrorMessage} from 'vee-validate';
+import * as yup from 'yup'
 
 import {
   Dialog,
@@ -41,6 +43,12 @@ const movieInfo = route.params.id;
 
 // get instance of store
 const store = useStore();
+
+// get all movies 
+// dispath  action to get all movies
+// store.dispatch('home/getAllMovies')
+store.dispatch('home/getAllComments', movieInfo)
+ 
 // show detail of movie  // movie detail
 const test2 = computed(() => store.state.home.viewMovie);
 
@@ -53,6 +61,7 @@ const product = reactive({
 });
 
 // extract the movie schadule date_time in to js date and store it in product array
+
 
 test2.value.schedule_dates.forEach((data) => {
   const days = ["Mon", "The", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -100,6 +109,7 @@ const { result } = useQuery(
       schedule_movies(where: { id: { _eq: $id } }) {
         price
         cinima {
+          id
           cinima_name
         }
         schedule_dates {
@@ -123,8 +133,43 @@ const { result } = useQuery(
     id: movieInfo,
   }
 );
+
+
+
+const cinima_id = ref()
+const movieDetails = ref()
+onMounted(() => {
+  console.log('hello world')
+ cinima_id.value = result.value.schedule_movies[0].cinima.id
+ movieDetails.value = result.value.schedule_movies
+ console.log('djkfjdfj')
+ 
+})
+
+
+const movieDetail = computed(() => {
+   return result.value.schedule_movies
+})
+// reactive movie price with no_of_ticket
+const movie_price = computed(() => result.value.schedule_movies[0].price * Book.number_of_ticket)
+//console.log(result.value.schedule_movies[0].price)
 // store fetch movies() response in reactive state
-const movieDetail = useResult(result, null, (data) => data.schedule_movies);
+//const movieDetail = useResult(result, null, (data) => data.schedule_movies);
+
+
+// onMounted(() => {
+// 
+// const movieDetail = computed(() => {
+//   return result.value.schedule_movies
+// })
+// 
+// 
+// 
+// })
+// const movieDetail = computed(() => {
+//   return result.value.schedule_movies
+// }
+// )
 
 // comment data to be inserted by the user
 const commentData = reactive({
@@ -145,13 +190,26 @@ const thankYouPage = () => {
   });
 };
 
+// validation schema
+
+const phoneRegExp = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/
+
+const schema = yup.object({
+  name: yup.string().required(),
+  email: yup.string().required(),
+  phone_number: yup.string().matches(phoneRegExp, 'Phone number is not valid'),
+  number_of_ticket: yup.number().positive().required(),
+  
+})
+
+
 // data from booking form
 const Book = reactive({
   name: "",
   email: "",
   phone_number: "",
   number_of_ticket: 1,
-  cinima_id: "google-oauth2|115138731985644817694",
+  cinima_id: cinima_id,
   scheduled_movie_id: movieInfo,
   booking_date: "",
   payment_varified: false,
@@ -170,10 +228,7 @@ const cheakBookingForm = () => {
   // console.log(store.state.home.reservationData)
 };
 
-const movie_price = reactive({
-  price: test2.value.price,
-  exact_price: computed(() => test2.value.price * Book.number_of_ticket),
-});
+
 
 function showStatus() {
   console.log(store.state.home.bookError);
@@ -352,8 +407,8 @@ function showStatus() {
             </p>
             <div class="self-start">
               <Dialogue
-                :thumbnail="test2.movie.movie_thumbnail"
-                :name="test2.movie.movie_name"
+                :thumbnail="data.movie.movie_thumbnail"
+                :name="data.movie.movie_name"
               >
                 <template v-slot:DialogueButton>
                   <BaseBtn
@@ -374,7 +429,11 @@ function showStatus() {
                   <div class="mt-10 sm:mt-0">
                     <div class="md:grid md:grid-cols-1 md:gap-6">
                       <div class="mt-5 md:mt-0 md:col-span-2">
-                        <form @submit.prevent="cheakBookingForm">
+                        {{ Book.cinima_id }}
+                        <Form
+                          @submit="cheakBookingForm"
+                          :validation-schema="schema"
+                        >
                           <div class="shadow overflow-hidden sm:rounded-md">
                             <div class="px-4 py-5 bg-white sm:p-6">
                               <div class="grid grid-cols-6 gap-6">
@@ -387,10 +446,14 @@ function showStatus() {
                                       font-serif
                                       text-gray-700
                                     "
-                                    >Full name</label
+                                    >Full name
+                                    <span class="text-red-800 font-black"
+                                      >*</span
+                                    ></label
                                   >
-                                  <input
+                                  <Field
                                     type="text"
+                                    name="name"
                                     v-model="Book.name"
                                     class="
                                       mt-1
@@ -405,6 +468,10 @@ function showStatus() {
                                     "
                                     required
                                   />
+                                  <ErrorMessage
+                                    name="name"
+                                    class="text-xs text-red-500"
+                                  />
                                 </div>
                                 <div class="col-span-6 sm:col-span-6">
                                   <label
@@ -415,11 +482,16 @@ function showStatus() {
                                       font-serif
                                       text-gray-700
                                     "
-                                    >Phone number</label
-                                  >
-                                  <input
+                                    >Phone number
+                                    <span class="text-red-800 font-black"
+                                      >*</span
+                                    >
+                                  </label>
+                                  <Field
                                     type="tel"
                                     v-model="Book.phone_number"
+                                    name="phone_number"
+                                    placeholder="09xxxxxxxx"
                                     class="
                                       mt-1
                                       focus:ring-indigo-500
@@ -432,6 +504,10 @@ function showStatus() {
                                       rounded-md
                                     "
                                     required
+                                  />
+                                  <ErrorMessage
+                                    name="phone_number"
+                                    class="text-xs text-red-500"
                                   />
                                 </div>
 
@@ -444,12 +520,16 @@ function showStatus() {
                                       font-serif
                                       text-gray-700
                                     "
-                                    >Email address</label
+                                    >Email address
+                                    <span class="text-red-800 font-black"
+                                      >*</span
+                                    ></label
                                   >
-                                  <input
+                                  <Field
                                     type="text"
                                     v-model="Book.email"
                                     autocomplete="email"
+                                    name="email"
                                     class="
                                       mt-1
                                       focus:ring-indigo-500
@@ -463,6 +543,10 @@ function showStatus() {
                                     "
                                     required
                                   />
+                                  <ErrorMessage
+                                    name="email"
+                                    class="text-red-500 text-xs"
+                                  />
                                 </div>
 
                                 <div class="col-span-6 sm:col-span-6">
@@ -474,7 +558,10 @@ function showStatus() {
                                       font-serif
                                       text-gray-700
                                     "
-                                    >Select Cinima</label
+                                    >Select Cinema
+                                    <span class="text-red-800 font-black"
+                                      >*</span
+                                    ></label
                                   >
                                   <select
                                     class="
@@ -494,7 +581,7 @@ function showStatus() {
                                     "
                                   >
                                     <option>
-                                      {{ test2.cinima.cinima_name }}
+                                      {{ data.cinima.cinima_name }}
                                     </option>
                                   </select>
                                 </div>
@@ -509,11 +596,15 @@ function showStatus() {
                                       font-serif
                                       text-gray-700
                                     "
-                                    >No of tickets</label
+                                    >No of tickets
+                                    <span class="text-red-800 font-black"
+                                      >*</span
+                                    ></label
                                   >
-                                  <input
+                                  <Field
                                     type="number"
                                     v-model="Book.number_of_ticket"
+                                    name="number_of_ticket"
                                     class="
                                       mt-1
                                       focus:ring-indigo-500
@@ -526,6 +617,10 @@ function showStatus() {
                                       rounded-md
                                     "
                                     required
+                                  />
+                                  <ErrorMessage
+                                    name="number-of_ticket"
+                                    class="text-red-500 text-xs"
                                   />
                                 </div>
 
@@ -542,7 +637,7 @@ function showStatus() {
                                       rounded-lg
                                     "
                                   >
-                                    {{ movie_price.exact_price }}
+                                    {{ movie_price }}
                                   </p>
                                   <p class="font-serif">Birr</p>
                                 </div>
@@ -687,7 +782,7 @@ function showStatus() {
                               </button>
                             </div>
                           </div>
-                        </form>
+                        </Form>
                       </div>
                     </div>
                   </div>

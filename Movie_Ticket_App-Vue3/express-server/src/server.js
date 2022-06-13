@@ -57,15 +57,15 @@ const updateMovie = async (req, res, next) => {
 			}
 		);
 
-		const res = await fetchResponse.json();
+		const response = await fetchResponse.json();
 		console.log(res);
 
 		// if Hasura operation errors, then throw error
-		if (errors) {
-			return res.status(400).json({
-				message: errors,
-			});
-		}
+		// if (errors) {
+		// 	return res.status(400).json({
+		// 		message: errors,
+		// 	});
+		// }
 
 		// success
 		return res.json({ msg: 'success' });
@@ -207,6 +207,7 @@ app.use(function (req, res, next) {
 //
 async function sendNotification(req, res) {
 	//	console.log(req.body.event.data.new);
+
 	const GET_MOVIE = `
 	query getMovie($id: Int!) {
 		movies_by_pk(id: $id) {
@@ -266,37 +267,47 @@ async function sendNotification(req, res) {
 	);
 
 	const va = await response2.json();
-	console.log(va.data.movies_by_pk.movie_name);
+	//console.log(va.data.movies_by_pk.movie_name);
 
 	// send notification
-	const registration_ids = token;
-	const title = 'New Movie Published' + va.data.movies_by_pk.movie_name;
-	const paylod = va.data.movies_by_pk.movie_description;
-	const body = {
-		registration_ids: registration_ids,
-		notification: {
-			title: title,
-			body: paylod,
-			icon: va.data.movies_by_pk.movie_thumbnail,
-			click_action: 'http://localhost:3000/',
-		},
-	};
-	const options = {
-		method: 'POST',
-		headers: {
-			Authorization: 'key=' + process.env.SERVER_KEY,
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(body),
-	};
+	try {
+		const registration_ids = token;
+		const title =
+			'New Movie Published' + va.data.movies_by_pk.movie_name;
+		const paylod = va.data.movies_by_pk.movie_description;
+		const body = {
+			registration_ids: registration_ids,
+			notification: {
+				title: title,
+				body: paylod,
+				icon: va.data.movies_by_pk.movie_thumbnail,
+				click_action: 'http://localhost:3000/',
+			},
+		};
+		const options = {
+			method: 'POST',
+			headers: {
+				Authorization:
+					'key=' +
+					'AAAA2WUWVyQ:APA91bHb_-vF_rpK2U2Ck8nZeQ_94Eylb-7iOBm3tD0BAyKrEOjywEijeYHbUsrRIov5EVb10Mkx9RGKbv0GTuoNUCZxZjcbPLiC4xzqsspAYRF_ul1c6DYuGXGGGBWxOhPoGcwhEp-9',
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(body),
+		};
 
-	fetch('https://fcm.googleapis.com/fcm/send', options)
-		.then((response) => {})
-		.catch((error) => {
-			console.log(error);
-		});
+		fetch('https://fcm.googleapis.com/fcm/send', options)
+			.then((response) => {
+				console.log(response);
+			})
+			.catch((error) => {
+				console.log(error);
+			});
 
-	res.send('success');
+		res.send('success');
+	} catch (e) {
+		console.log(e);
+		res.send('error');
+	}
 }
 
 // upload new movie to movies table

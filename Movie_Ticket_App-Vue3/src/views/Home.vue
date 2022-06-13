@@ -16,7 +16,7 @@ const router = useRouter()
 
 
 
-// initialise the store
+// initialize the store
 const store = useStore()
 
 // dispath  action to get all movies
@@ -28,7 +28,6 @@ const movieData = computed(() => store.state.home.movieDetails)
 
 // show the details of the movie
 function movieDetailPage (id) {
-store.dispatch('home/getAllComments', id)
  store.dispatch('home/getMovieDetail', id)
 
   router.push({

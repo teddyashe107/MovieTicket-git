@@ -34,7 +34,7 @@ let handleWindowResize = () => {
 }
 </script>
 <template>
-  <div class="side-content-wrap">
+  <div class="side-content-wrap bg-gray-800 text-white">
     <div class="side-content-wrap">
       <div
         :class="
@@ -132,7 +132,6 @@ let handleWindowResize = () => {
     left: -120px;
     width: 120px;
 
-    background: #fff;
     box-shadow: 0 4px 20px 1px rgba(0, 0, 0, 0.06),
       0 1px 4px rgba(0, 0, 0, 0.08);
     z-index: 90;

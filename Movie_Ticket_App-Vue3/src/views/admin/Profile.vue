@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue';
+import { ref,reactive } from 'vue';
 import { gql } from 'graphql-tag';
 //import {  useMutation } from '@vue/apollo-composable'
 import {  useQuery, useResult, useMutation } from '@vue/apollo-composable'
@@ -70,24 +70,13 @@ function onFileChange(e) {
 // }
 //  `
   const {mutate: movieSchedule} = useMutation( gql`
-   mutation scheduleMovie($cinima_id: String!, $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
-  insert_schedule_movies(objects: {cinima_id:$cinima_id, movie_id: $movie_id, price: $price, 
+   mutation scheduleMovie( $movie_id:Int!, $price:float8, $schedule_dates: [schedule_date_insert_input!]!  ) {
+  insert_schedule_movies(objects: { movie_id: $movie_id, price: $price, 
     schedule_dates: {data: $schedule_dates}}) {
     affected_rows
   }
 }
- `,{
-     variables: {
-       cinima_id: 'auth0|61aa6159cfb0050072bb13b8',
-       movie_id:'14',
-       price: '100',
-      schedule_dates: [
-    {schedule_date: "12-13-2021"},
-    {schedule_date: "02-13-2021"},
-    {schedule_date: "11-13-2021"}
-  ]
-     },
- }
+ `
  )
 const uploadFile = async (req, res, next) => {
 	try {
@@ -149,6 +138,21 @@ function deleteAndUpdateMovie(id){
      }
     })
 }
+
+const setPrice = ref()
+const movieId = ref()
+
+const getId = (id) => {
+    movieId.value = id
+}
+
+
+
+const scheduleDataa = reactive([
+    {
+      schedule_date: '',
+      }
+])
 </script>
 
 <template>
@@ -162,26 +166,26 @@ function deleteAndUpdateMovie(id){
     <div class="md:grid md:grid-cols-3 md:gap-6">
       <div class="md:col-span-1">
         <div class="px-4 sm:px-0">
-          <h3 class="text-lg font-medium leading-6 text-gray-900">
-            Create new movie as cinima
-          </h3>
-          <p class="mt-1 text-sm text-gray-600">
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Maiores,
-            consectetur!
-          </p>
+          <p class="mt-1 text-sm text-gray-100">Create new movie as cinima</p>
         </div>
       </div>
       <div class="mt-5 md:mt-0 md:col-span-2">
         <form @submit.prevent="uploadFile">
           <div class="shadow overflow-hidden sm:rounded-md">
-            <div class="px-4 py-5 bg-white sm:p-6">
+            <div
+              class="
+                px-4
+                py-5
+                bg-gray-800
+                text-white
+                font-medium
+                leading-5
+                sm:p-6
+              "
+            >
               <div class="grid grid-cols-6 gap-6">
                 <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="actor-name"
-                    class="block text-sm font-medium text-gray-700"
-                    >Actor Name</label
-                  >
+                  <label for="actor-name" class="block">Actor Name</label>
                   <input
                     type="text"
                     v-model="datas.actor_name"
@@ -192,6 +196,7 @@ function deleteAndUpdateMovie(id){
                       w-full
                       shadow-sm
                       sm:text-sm
+                      text-gray-700
                       border-gray-300
                       rounded-md
                     "
@@ -199,16 +204,13 @@ function deleteAndUpdateMovie(id){
                 </div>
 
                 <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="director-name"
-                    class="block text-sm font-medium text-gray-700"
-                    >Director Name</label
-                  >
+                  <label for="director-name" class="block">Director Name</label>
                   <input
                     type="text"
                     v-model="datas.director_name"
                     class="
                       mt-1
+                      text-gray-700
                       focus:ring-indigo-500 focus:border-indigo-500
                       block
                       w-full
@@ -221,11 +223,7 @@ function deleteAndUpdateMovie(id){
                 </div>
 
                 <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="rating"
-                    class="block text-sm font-medium text-gray-700"
-                    >Rating</label
-                  >
+                  <label for="rating" class="block text-sm">Rating</label>
                   <input
                     type="number"
                     v-model="datas.rating"
@@ -237,17 +235,14 @@ function deleteAndUpdateMovie(id){
                       shadow-sm
                       sm:text-sm
                       border-gray-300
+                      text-gray-700
                       rounded-md
                     "
                   />
                 </div>
 
                 <div class="col-span-6 sm:col-span-4">
-                  <label
-                    for="movie-name"
-                    class="block text-sm font-medium text-gray-700"
-                    >Movie Name</label
-                  >
+                  <label for="movie-name" class="block">Movie Name</label>
                   <input
                     type="text"
                     v-model="datas.movie_name"
@@ -259,17 +254,14 @@ function deleteAndUpdateMovie(id){
                       shadow-sm
                       sm:text-sm
                       border-gray-300
+                      text-gray-700
                       rounded-md
                     "
                   />
                 </div>
 
                 <div class="col-span-6 sm:col-span-3">
-                  <label
-                    for="movie-type"
-                    class="block text-sm font-medium text-gray-700"
-                    >Movie type</label
-                  >
+                  <label for="movie-type" class="block">Movie type</label>
                   <select
                     v-model="datas.movie_type"
                     class="
@@ -279,12 +271,13 @@ function deleteAndUpdateMovie(id){
                       py-2
                       px-3
                       border border-gray-300
-                      bg-white
+                      bg-gray-500
                       rounded-md
                       shadow-sm
                       focus:outline-none
                       focus:ring-indigo-500
                       focus:border-indigo-500
+                      text-gray-700
                       sm:text-sm
                     "
                   >
@@ -300,9 +293,7 @@ function deleteAndUpdateMovie(id){
                 </div>
 
                 <div class="col-span-6">
-                  <label
-                    for="published-year"
-                    class="block text-sm font-medium text-gray-700"
+                  <label for="published-year" class="block"
                     >Published Year</label
                   >
                   <input
@@ -324,9 +315,7 @@ function deleteAndUpdateMovie(id){
               </div>
 
               <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700">
-                  Thumbnail
-                </label>
+                <label class="block"> Thumbnail </label>
                 <div
                   class="
                     mt-1
@@ -395,10 +384,7 @@ function deleteAndUpdateMovie(id){
                 </div>
               </div>
               <div class="mt-4">
-                <label
-                  for="movie-description"
-                  class="block text-sm font-medium text-gray-700"
-                >
+                <label for="movie-description" class="block">
                   Movie Description
                 </label>
                 <div class="mt-1">
@@ -410,6 +396,7 @@ function deleteAndUpdateMovie(id){
                       focus:ring-indigo-500 focus:border-indigo-500
                       mt-1
                       block
+                      text-gray-700
                       w-full
                       sm:text-sm
                       border border-gray-300
@@ -421,7 +408,7 @@ function deleteAndUpdateMovie(id){
               </div>
             </div>
 
-            <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <div class="px-4 py-3 text-right sm:px-6">
               <button
                 type="submit"
                 class="
@@ -453,7 +440,7 @@ function deleteAndUpdateMovie(id){
   </div>
 
   <div class="col-span-12">
-    <BaseCard>
+    <BaseCard class="bg-gray-200">
       <template v-slot:cardHeader>
         <div class="card-header">
           <div class="card-title py-3 mx-4">All movies Added</div>
@@ -616,6 +603,7 @@ function deleteAndUpdateMovie(id){
                       <template v-slot:DialogueButton>
                         <BaseBtn
                           rounded
+                          @click="getId(movie.id)"
                           class="
                             border border-primary
                             text-white
@@ -630,7 +618,15 @@ function deleteAndUpdateMovie(id){
 
                       <template v-slot:Main>
                         <div class="mt-5 md:mt-0 md:col-span-2">
-                          <form @submit.prevent="movieSchedule">
+                          <form
+                            @submit.prevent="
+                              movieSchedule({
+                                movie_id: movieId,
+                                price: setPrice,
+                                schedule_dates: scheduleDataa,
+                              })
+                            "
+                          >
                             <div class="shadow overflow-hidden sm:rounded-md">
                               <div class="px-4 py-5 bg-white sm:p-6">
                                 <div class="grid grid-cols-6 gap-6">
@@ -647,7 +643,7 @@ function deleteAndUpdateMovie(id){
                                     >
                                     <input
                                       type="number"
-                                      v-model="scheduleData.setPrice"
+                                      v-model="setPrice"
                                       class="
                                         mt-1
                                         focus:ring-indigo-500
@@ -696,12 +692,12 @@ function deleteAndUpdateMovie(id){
                                     </div>
                                     <div
                                       class="flex"
-                                      v-for="(item, index) in scheduleData"
+                                      v-for="(item, index) in scheduleDataa"
                                       :key="index"
                                     >
                                       <input
                                         type="date"
-                                        v-model="item.scheduleData"
+                                        v-model="item.schedule_date"
                                         class="
                                           mt-3
                                           focus:ring-indigo-500

@@ -94,7 +94,7 @@ const updateMovie = (id) => {
 
 <template>
   <div class="col-span-12">
-    <BaseCard>
+    <BaseCard class="bg-gray-800 text-white">
       <template v-slot:cardHeader>
         <div class="card-header">
           <div class="card-title py-3">Scheduled Movies</div>
@@ -208,7 +208,7 @@ const updateMovie = (id) => {
               </thead>
               <tbody>
                 <tr
-                  class="hover:bg-gray-100 cursor-pointer"
+                  class="hover:bg-gray-700 cursor-pointer"
                   v-for="movie in movies"
                   :key="movie.id"
                 >

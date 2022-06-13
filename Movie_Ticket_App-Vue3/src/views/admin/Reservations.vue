@@ -42,7 +42,7 @@ const coustomers = useResult(result, null, (data) => data.ticket_reservation)
 
 <template>
   <div class="col-span-12">
-    <BaseCard>
+    <BaseCard class="bg-gray-800 text-white">
       <template v-slot:cardHeader>
         <div class="card-header">
           <div class="card-title py-3">Recent Reservations</div>
@@ -156,7 +156,7 @@ const coustomers = useResult(result, null, (data) => data.ticket_reservation)
               </thead>
               <tbody>
                 <tr
-                  class="hover:bg-gray-100 cursor-pointer"
+                  class="hover:bg-gray-700 cursor-pointer"
                   v-for="(item, index) in coustomers"
                   :key="index"
                 >

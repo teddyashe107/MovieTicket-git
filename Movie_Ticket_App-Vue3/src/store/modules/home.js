@@ -73,6 +73,7 @@ const home = {
 						id
 						price
 						cinima {
+						    id
 							cinima_name
 						}
 						schedule_dates {

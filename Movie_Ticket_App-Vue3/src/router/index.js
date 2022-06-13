@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import NotFound from '../views/NotFound.vue';
 import Test from '../views/Test.vue';
+import Form from '../views/Form.vue';
 import MovieDetails from '../views/MovieDetails.vue';
 import Movies from '../views/admin/Movies.vue';
 import Profile from '../views/admin/Profile.vue';
@@ -59,6 +60,12 @@ const routes = [
 		component: Test,
 		props: true,
 	},
+	{
+		path: '/form',
+		name: 'form',
+		component: Form,
+		props: true,
+	},
 
 	{
 		path: '/searchexample',
@@ -82,7 +89,7 @@ const routes = [
 		name: 'Admin',
 		component: () => import('../layouts/admin/index.vue'),
 		redirect: '/admin/dashboard',
-		beforeEnter: authGuard,
+		//beforeEnter: authGuard,
 		children: [
 			{
 				path: 'dashboard',

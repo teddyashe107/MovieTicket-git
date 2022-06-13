@@ -151,7 +151,7 @@ const uploadFile = async (req, res, next) => {
 
 <template>
   <div class="col-span-12">
-    <BaseCard>
+    <BaseCard class="bg-gray-900 text-white">
       <template v-slot:cardHeader>
         <div class="card-header">
           <div class="card-title text-3xl py-3 mx-4">All movies</div>
@@ -175,86 +175,19 @@ const uploadFile = async (req, res, next) => {
             "
           >
             <table class="table-3 dataTable-table max-w-full w-full">
-              <thead>
+              <thead class="text-gray-200">
                 <tr class="">
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Movie Id
-                  </th>
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Movie Name
-                  </th>
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Thumbnail
-                  </th>
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Status
-                  </th>
-
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Published-year
-                  </th>
-                  <th
-                    class="
-                      text-left
-                      border-b
-                      pb-3
-                      mb-3
-                      text-gray-500
-                      font-semibold
-                    "
-                  >
-                    Action
-                  </th>
+                  <th class="text-left border-b pb-3 mb-3">Movie Id</th>
+                  <th class="text-left border-b pb-3 mb-3">Movie Name</th>
+                  <th class="text-left border-b pb-3 mb-3">Thumbnail</th>
+                  <th class="text-left border-b pb-3 mb-3">Status</th>
+                  <th class="text-left border-b pb-3 mb-3">Published-year</th>
+                  <th class="text-left border-b pb-3 mb-3">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  class="hover:bg-gray-100 cursor-pointer"
+                  class="hover:bg-gray-800 cursor-pointer"
                   v-for="movie in movies"
                   :key="movie.id"
                 >
