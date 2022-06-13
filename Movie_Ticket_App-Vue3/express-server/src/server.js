@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 //const express = require('express');
 import express from 'express';
 
@@ -9,7 +11,6 @@ import bodyParser from 'body-parser';
 import fs from 'fs';
 import { async } from '@firebase/util';
 
-import 'dotenv/config';
 const app = express();
 app.use(express.static('public'));
 
@@ -287,9 +288,7 @@ async function sendNotification(req, res) {
 		const options = {
 			method: 'POST',
 			headers: {
-				Authorization:
-					'key=' +
-					'AAAA2WUWVyQ:APA91bHb_-vF_rpK2U2Ck8nZeQ_94Eylb-7iOBm3tD0BAyKrEOjywEijeYHbUsrRIov5EVb10Mkx9RGKbv0GTuoNUCZxZjcbPLiC4xzqsspAYRF_ul1c6DYuGXGGGBWxOhPoGcwhEp-9',
+				Authorization: 'key=' + process.env.SERVER_KEY,
 				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify(body),
@@ -312,10 +311,6 @@ async function sendNotification(req, res) {
 
 // upload new movie to movies table
 app.post('/api/upload', addMovie);
-// app.post('/api/test', (req, res) => {
-// 	// console log req body
-// 	console.log(req.body);
-// });
 
 // update ispublished table of movies when an event is triggered
 app.post('/updateMovie', updateMovie);
